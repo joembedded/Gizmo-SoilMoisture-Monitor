@@ -13,7 +13,7 @@ _*Gizmo ist ein 100% Open Source Projekt!*_
 _*Wenn alles klappt, könnte daraus ein spannender und preisgünstiger Sensor für die Allgemeinheit werden*_
 _*'Collaborteure' sind jederzeit herzlich willkommen*_
 
-
+---
 **Gizmo_0V1 - Boilerplate und Vor-Prototyp**
 
 Im ersten Schritt geht es aber erst einmal darum das Messverfahren festzulegen.
@@ -44,8 +44,8 @@ Speziell das 169Mhz 'SRD'-Band erscheint recht vielversprechend... Tests werden 
 
 [Gizmo_0V1 - PCB, Layouts und Schaltpläne im Ordner 'docu']
 
-
-**Gizmo - der Plan **
+---
+**Gizmo - der Plan**
 - Tests und festlegung des Messsystems: Dazu PCB mit LowCost BlE Modul und Speicher (als Logger) layoutet.
 - Erste Software (basierend auf Open-SDI12-Blue-Modulen und JesFs)
 - Finalisierung einer PCB V1.0 (Multilayer mit korrosiongeschützer Sensorfläche), LoRa-Modul und 3D-gedrucktem Batteriefach
@@ -54,9 +54,7 @@ Speziell das 169Mhz 'SRD'-Band erscheint recht vielversprechend... Tests werden 
 - ...
 
 ---
-
 ## Changelog  ##
 - V0.1  Gizmo Prototype als PCB gefertigt
-
 ---
 
