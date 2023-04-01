@@ -10,8 +10,8 @@ eingesetzt werden, so dass Gizmo auch über grosse Entfernungen und selbst mit
 einfachen Batterien jahrelang arbeiten kann. 
 
 _*Gizmo ist ein 100% Open Source Projekt!*_
-_*Wenn alles klappt, könnte daraus ein spannender und preisgünstiger Sensor für die Allgemeinheit werden*_
-_*'Collaborteure' sind jederzeit herzlich willkommen*_
+_*Wenn alles klappt, könnte daraus ein spannender und preisgünstiger Sensor für die Allgemeinheit werden.*_
+_*'Collaborteure' sind jederzeit herzlich willkommen!*_
 
 ---
 **Gizmo_0V1 - Boilerplate und Vor-Prototyp**
@@ -28,9 +28,9 @@ denn die Art des Bodens (z.B. sandig oder eher lehmig) spielt eine fast noch gr�
 ist der Wassergehalt als Messwert absolut OK. Gizmo soll ja auch kein wissenschaftliches Messgerät, sondern nur ein (hoffentlich) zuverlässiger Giess-Monitor werden).
 
 Es bietet sich also an, Frequenzen im Bereich >> 1Mhz und < 1Ghz zu verwenden. Als Sensorelement wir die Kapazität einer kleinen 
-Kupferfläche (die später in einer korrosionsgeschützen Innenlage der PCB verschwinden wird) verwendet und ganz grob ca. 10pF - 100pF beträgt.
+Kupferfläche (die später in einer korrosionsgeschützten Innenlage der PCB verschwinden wird) verwendet und ganz grob ca. 10pF - 100pF beträgt.
 Je stärker das Anregungssignal ist, desto günstiger wird auch die Messung. Aber schnell kann daraus auch ein nicht CE-konformer Sender werden.
-Daher sind auf dem Gizmo_0V1 mehrere verschiedene Mess- und Anrgeungs-Systeme vorgesehen (Details dazu folgen). 
+Daher sind auf dem Gizmo_0V1 mehrere verschiedene Mess- und Anregungs-Systeme vorgesehen (Details dazu folgen). 
 
 In Europa gelten auf diesen Frequenzen etwas lockerere Vorschriften (ERP = Effektiv abgestrahlte Leistung):
 - 26.957 - 27.283 MHz: CB-Band
@@ -46,15 +46,15 @@ Speziell das 169Mhz 'SRD'-Band erscheint recht vielversprechend... Tests werden 
 
 ---
 **Gizmo - der Plan**
-- Tests und festlegung des Messsystems: Dazu PCB mit LowCost BlE Modul und Speicher (als Logger) layoutet.
+- Tests und Festlegung des Messsystems: Dazu PCB mit LowCost BLE Modul und Speicher (als Logger) layoutet.
 - Erste Software (basierend auf Open-SDI12-Blue-Modulen und JesFs)
-- Finalisierung einer PCB V1.0 (Multilayer mit korrosiongeschützer Sensorfläche), LoRa-Modul und 3D-gedrucktem Batteriefach
-- ANbindung an z.B. das Community LoRa-Netz TTN
+- Finalisierung einer PCB V1.0 (Multilayer mit korrosiongeschützter Sensorfläche), LoRa-Modul und 3D-gedrucktem Batteriefach
+- Anbindung an z.B. das Community LoRa-Netz TTN
 - Kleine APP (basierend auf BLX.JS) für die praktische Nutzung
 - ...
 
 ---
 ## Changelog  ##
-- V0.1  Gizmo Prototype als PCB gefertigt
+- 01.04.2023 V0.1 Gizmo Prototyp als PCB in Fertigung gegeben
 ---
 
