@@ -47,7 +47,7 @@ Speziell das 169Mhz 'SRD'-Band erscheint recht vielversprechend... Tests werden 
 ---
 **Gizmo - der Plan**
 - Tests und Festlegung des Messsystems: Dazu PCB mit LowCost BLE Modul und Speicher (als Logger) layoutet.
-- Erste Software (basierend auf Open-SDI12-Blue-Modulen und JesFs)
+- Erste Software (basierend auf Open-SDI12-Blue-Libs und JesFs)
 - Finalisierung einer PCB V1.0 (Multilayer mit korrosiongeschützter Sensorfläche), LoRa-Modul und 3D-gedrucktem Batteriefach
 - Anbindung an z.B. das Community LoRa-Netz TTN
 - Kleine APP (basierend auf BLX.JS) für die praktische Nutzung
