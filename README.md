@@ -9,9 +9,9 @@ für die Praxis geeigneten IoT Sensor entwickeln. Final soll ein LoRa-Modul
 eingesetzt werden, so dass Gizmo auch über grosse Entfernungen und selbst mit
 einfachen Batterien jahrelang arbeiten kann. 
 
-*_Gizmo ist ein 100% Open Source Projekt! 
-*_Wenn alles klappt, könnte daraus ein spannender und preisgünstiger Sensor für die Allgemeinheit werden.
-*_'Collaborteure' sind jederzeit herzlich willkommen
+_*Gizmo ist ein 100% Open Source Projekt!*_
+_*Wenn alles klappt, könnte daraus ein spannender und preisgünstiger Sensor für die Allgemeinheit werden*_
+_*'Collaborteure' sind jederzeit herzlich willkommen*_
 
 
 **Gizmo_0V1 - Boilerplate und Vor-Prototyp**
@@ -23,7 +23,7 @@ Diese ist bis ca. 1 GHz recht konstant (bei ca. 80), hat aber den Nachteil, dass
 niedereren Frequenzen (unter ca. 1-10 Mhz) das Signal stark verfälschen
 (Details dazu [hier](https://de.wikipedia.org/wiki/Permittivit%C3%A4t) ).
 
-(Technische Anmerkung: Die Menge des vorhandenen Wassers im Boden ist allerdings trotzdem auch immer nur ein indirektes Mass,
+(Technische Anmerkung: Die Menge des vorhandenen Wassers im Boden ist allerdings trotzdem auch immer nur ein indirektes Mass für den 'Giess-Bedarf',
 denn die Art des Bodens (z.B. sandig oder eher lehmig) spielt eine fast noch größere Rolle. Aber da diese sich lokal normalerweise nicht ändert,
 ist der Wassergehalt als Messwert absolut OK. Gizmo soll ja auch kein wissenschaftliches Messgerät, sondern nur ein (hoffentlich) zuverlässiger Giess-Monitor werden).
 
