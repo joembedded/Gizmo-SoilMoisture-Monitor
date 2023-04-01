@@ -9,8 +9,9 @@ für die Praxis geeigneten IoT Sensor entwickeln. Final soll ein LoRa-Modul
 eingesetzt werden, so dass Gizmo auch über grosse Entfernungen und selbst mit
 einfachen Batterien jahrelang arbeiten kann. 
 
-## Gizmo ist ein 100% Open Source Projekt! Wenn alles klappt, könnte daraus ein spannender und preisgünstiger Sensor für die Allgemeinheit werden.##
-## 'Collaborteure' sind jederzeit herzlich willkommen ##
+*_Gizmo ist ein 100% Open Source Projekt! 
+*_Wenn alles klappt, könnte daraus ein spannender und preisgünstiger Sensor für die Allgemeinheit werden.
+*_'Collaborteure' sind jederzeit herzlich willkommen
 
 
 **Gizmo_0V1 - Boilerplate und Vor-Prototyp**
