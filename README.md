@@ -9,6 +9,10 @@ für die Praxis geeigneten IoT Sensor entwickeln. Final soll ein LoRa-Modul
 eingesetzt werden, so dass Gizmo auch über grosse Entfernungen und selbst mit
 einfachen Batterien jahrelang arbeiten kann. 
 
+## Gizmo ist ein 100% Open Source Projekt! Wenn alles klappt, könnte daraus ein spannender und preisgünstiger Sensor für die Allgemeinheit werden.##
+## 'Collaborteure' sind jederzeit herzlich willkommen ##
+
+
 **Gizmo_0V1 - Boilerplate und Vor-Prototyp**
 
 Im ersten Schritt geht es aber erst einmal darum das Messverfahren festzulegen.
@@ -35,10 +39,18 @@ In Europa gelten auf diesen Frequenzen etwas lockerere Vorschriften (ERP = Effek
 
 Speziell das 169Mhz 'SRD'-Band erscheint recht vielversprechend... Tests werden es zeigen ;-)
 
-![Gizmo_0V1](https://github.com/joembedded/Gizmo-SoilMoisture/blob/master/docu/pgizmo01.png)
+![Gizmo_0V1](./docu/pgizmo01.png)
 
 [Gizmo_0V1 - PCB, Layouts und Schaltpläne im Ordner 'docu']
 
+
+**Gizmo - der Plan **
+- Tests und festlegung des Messsystems: Dazu PCB mit LowCost BlE Modul und Speicher (als Logger) layoutet.
+- Erste Software (basierend auf Open-SDI12-Blue-Modulen und JesFs)
+- Finalisierung einer PCB V1.0 (Multilayer mit korrosiongeschützer Sensorfläche), LoRa-Modul und 3D-gedrucktem Batteriefach
+- ANbindung an z.B. das Community LoRa-Netz TTN
+- Kleine APP (basierend auf BLX.JS) für die praktische Nutzung
+- ...
 
 ---
 
