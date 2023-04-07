@@ -20,7 +20,7 @@ Im ersten Schritt geht es aber erst einmal darum das Messverfahren festzulegen.
 
 Es bietet sich an die recht hohe Dielektrizitätskonstante von Wasser auszunutzen. 
 Diese ist bis ca. 1 GHz recht konstant (bei ca. 80), hat aber den Nachteil, dass z.B. Salze bei
-niedereren Frequenzen (unter ca. 1-10 Mhz) das Signal stark verfälschen
+niedereren Frequenzen (unter ca. 1-10 Mhz) das Signal stark verfälschen.
 (Details dazu [hier](https://de.wikipedia.org/wiki/Permittivit%C3%A4t) ).
 
 (Technische Anmerkung: Die Menge des vorhandenen Wassers im Boden ist allerdings trotzdem auch immer nur ein indirektes Mass für den 'Giess-Bedarf',
@@ -38,7 +38,7 @@ In Europa gelten auf diesen Frequenzen etwas lockerere Vorschriften (ERP = Effek
 - 40.660 – 40.700 MHz: max. 10 mW ERP
 - 169.400 – 169.8125 MHz: 3 Bänder, mit max. >= 10mW
 
-Speziell das 169Mhz 'SRD'-Band erscheint recht vielversprechend... Tests werden es zeigen ;-)
+Die Geometrie der Sensorfläche muss für einen kapazitiven Sensor aber jedezeit unter der Lambda/4-Länge liegen, bei einer max. Dielektrizitätskonstante von 80 wären das bei 40 Mhz ca. 21 cm (bei 169 Mhz aber nur (zu kurze) ca. 5 cm). [Hier](sensorsim01.png./docu/.png) die mit FEMM auf 10 cm simulierte Geometrie. Später sollen die Leiter korrosionsgeschützt in einer Innenlage verschwinden. In der weiteren Simulation und ersten Tests ergab sich auch, dass ein Abstand der Sensorfläche zu GND von 2.2 mm und eine Länge von 10 cm noch absolut ausreichend für ein gutes Signal sind. (Details dazu folgen). 
 
 ![Gizmo_0V1](./docu/pgizmo01.png)
 
@@ -56,5 +56,6 @@ Speziell das 169Mhz 'SRD'-Band erscheint recht vielversprechend... Tests werden 
 ---
 ## Changelog  ##
 - 01.04.2023 V0.1 Gizmo Prototyp als PCB in Fertigung gegeben
+- 07.04.2023 Erste elektrische Tests der PCB V0.1
 ---
 
