@@ -39,7 +39,7 @@ In Europa gelten auf diesen Frequenzen etwas lockerere Vorschriften (ERP = Effek
 - 169.400 – 169.8125 MHz: 3 Bänder, mit max. >= 10mW
 
 Die Geometrie der Sensorfläche muss für einen kapazitiven Sensor aber jedezeit unter der Lambda/4-Länge liegen, bei einer max. Dielektrizitätskonstante von 80 wären das bei 40 Mhz ca. 21 cm, bei 169 Mhz aber nur ca. 5 cm. Das 40 MHz Band erscheint daher als ein guter Ausgangspunkt.
-[Hier](./docu/sensorsim01.png) die mit FEMM auf 10 cm simulierte Geometrie. Später sollendie Leiter korrosionsgeschützt in einer Innenlage verschwinden. In der weiteren Simulation und ersten Tests ergab sich auch, dass ein Abstand der Sensorfläche zu GND von 2.2 mm und eine Länge von 10 cm noch absolut ausreichend für ein gutes Signal sind. (Details dazu folgen). 
+[Hier](./docu/sensorsim01.png) die mit FEMM auf 10 cm simulierte Geometrie. Später sollen die Leiter korrosionsgeschützt in einer Innenlage verschwinden. In der weiteren Simulation und ersten Tests ergab sich auch, dass ein Abstand der Sensorfläche zu GND von 2.2 mm und eine Länge von 10 cm noch absolut ausreichend für ein gutes Signal sind. (Details dazu folgen). 
 
 ![Gizmo_0V1](./docu/pgizmo01.png)
 
