@@ -27,18 +27,19 @@ niedereren Frequenzen (unter ca. 1-10 Mhz) das Signal stark verfälschen.
 denn die Art des Bodens (z.B. sandig oder eher lehmig) spielt eine fast noch größere Rolle. Aber da diese sich lokal normalerweise nicht ändert,
 ist der Wassergehalt als Messwert absolut OK. Gizmo soll ja auch kein wissenschaftliches Messgerät, sondern nur ein (hoffentlich) zuverlässiger Giess-Monitor werden).
 
-Es bietet sich also an, Frequenzen im Bereich >> 1Mhz und < 1Ghz zu verwenden. Als Sensorelement wir die Kapazität einer kleinen 
+Es bietet sich also an, Frequenzen im Bereich >> 1Mhz und < 1Ghz zu verwenden. Als Sensorelement wird die Kapazität einer kleinen 
 Kupferfläche (die später in einer korrosionsgeschützten Innenlage der PCB verschwinden wird) verwendet und ganz grob ca. 10pF - 100pF beträgt.
 Je stärker das Anregungssignal ist, desto günstiger wird auch die Messung. Aber schnell kann daraus auch ein nicht CE-konformer Sender werden.
 Daher sind auf dem Gizmo_0V1 mehrere verschiedene Mess- und Anregungs-Systeme vorgesehen (Details dazu folgen). 
 
 In Europa gelten auf diesen Frequenzen etwas lockerere Vorschriften (ERP = Effektiv abgestrahlte Leistung):
 - 26.957 - 27.283 MHz: CB-Band
-- 87.5 - 108 MHz: max. 50nW ERP 
 - 40.660 – 40.700 MHz: max. 10 mW ERP
+- 87.5 - 108 MHz: max. 50nW ERP 
 - 169.400 – 169.8125 MHz: 3 Bänder, mit max. >= 10mW
 
-Die Geometrie der Sensorfläche muss für einen kapazitiven Sensor aber jedezeit unter der Lambda/4-Länge liegen, bei einer max. Dielektrizitätskonstante von 80 wären das bei 40 Mhz ca. 21 cm, bei 169 Mhz aber nur ca. 5 cm. Das 40 MHz Band erscheint daher als ein guter Ausgangspunkt.
+Die Geometrie der Sensorfläche muss für einen kapazitiven Sensor aber jedezeit unter der Lambda/4-Länge liegen, bei einer max. Dielektrizitätskonstante von 80 wären das bei 40 Mhz ca. 21 cm, bei 169 Mhz aber nur ca. 5 cm. Das 40 MHz Band (speziell 40.680 MHz) erscheint daher als ein guter Ausgangspunkt.
+
 [Hier](./docu/sensorsim01.png) die mit FEMM auf 10 cm simulierte Geometrie. Später sollen die Leiter korrosionsgeschützt in einer Innenlage verschwinden. In der weiteren Simulation und ersten Tests ergab sich auch, dass ein Abstand der Sensorfläche zu GND von 2.2 mm und eine Länge von 10 cm noch absolut ausreichend für ein gutes Signal sind. (Details dazu folgen). 
 
 ![Gizmo_0V1](./docu/pgizmo01.png)
