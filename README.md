@@ -39,9 +39,9 @@ Die Geometrie der Sensorfläche muss für einen kapazitiven Sensor aber jedezeit
 
 [Sensorsimulation](./docu/sensorsim01.png) die mit FEMM auf 10 cm simulierte Geometrie. Später sollen die Leiter korrosionsgeschützt in einer Innenlage verschwinden. In der weiteren Simulation und ersten Tests ergab sich auch, dass ein Abstand der Sensorfläche zu GND von 2.2 mm und eine Länge von 10 cm noch absolut ausreichend für ein gutes Signal sind. (Details dazu folgen). 
 
-![Gizmo_0V1](./docu/pgizmo01.png) - Die erste Version arbeitet mit SDI-12 und Bluetooth.
+![Gizmo_0V1](./docu/pgizmo01.png) - Die erste Version arbeitet mit SDI-12 und Bluetooth (Modul: [Open-SDI12-Blue](https://github.com/joembedded/Open-SDI12-Blue) )
 
-[Gizmo_0V1 - PCB, Layouts und Schaltpläne im Ordner 'docu']
+[Gizmo_0V1 - PCB, Layouts und Schaltpläne im Ordner 'docu'](./docu/)
 
 ---
 **Gizmo - der Plan**
