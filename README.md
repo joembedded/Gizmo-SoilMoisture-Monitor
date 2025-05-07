@@ -26,20 +26,20 @@ Dielektrizitätskonstante (Realteil) und dem störenden Leitwert (Imaginärteil)
 
 (Technische Anmerkung: Die Menge des vorhandenen Wassers im Boden ist allerdings trotzdem auch immer nur ein indirektes Mass für den 'Giess-Bedarf',
 denn die Art des Bodens (z.B. sandig oder eher lehmig) spielt eine fast noch größere Rolle. Aber da diese sich lokal normalerweise nicht ändert,
-ist der Wassergehalt als Messwert absolut OK. Gizmo soll ja auch kein wissenschaftliches Messgerät, sondern nur ein (hoffentlich) zuverlässiger Giess-Monitor werden).
+ist der Wassergehalt als Messwert absolut OK. Auch ist der Salzgehalt nicht von Interesse, einzig nur sollte er das Signal möglichst wenig verfälschen.
+Gizmo soll ja auch kein wissenschaftliches Messgerät, sondern nur ein (hoffentlich) zuverlässiger Giess-Monitor werden).
 
 Es bietet sich also an, Frequenzen im Bereich > 10 Mhz und < 1Ghz zu verwenden. Als Sensorelement wird die Kapazität einer kleinen 
 Kupferfläche (die in einer korrosionsgeschützten Innenlage der PCB geschützt ist) verwendet und ganz grob ca. 10pF - 100pF beträgt.
 Je stärker das Anregungssignal ist, desto günstiger wird auch die Messung. Aber schnell kann daraus auch ein nicht CE-konformer Sender werden.
-Daher sind auf dem Gizmo_0V1 für die ersten Tests mehrere verschiedene Mess- und Anregungs-Systeme vorgesehen.
 
-Nach wissenschaftlichen Referenzstudien ähnlicher Sensoren (u.a. [Measurement of Soil Water Content with a 50-MHz Soil Dielectric Sensor – Seyfried & Murdock, 2004](https://www.researchgate.net/publication/43261344_Measurement_of_Soil_Water_Content_with_a_50-MHz_Soil_Dielectric_Sensor) ) eignet sich das weltweit freie ISM-Band 40.660 – 40.700 MHz dazu sehr gut. 
+Nach wissenschaftlichen Referenzstudien ähnlicher Sensoren (u.a. [Measurement of Soil Water Content with a 50-MHz Soil Dielectric Sensor – Seyfried & Murdock, 2004](https://www.researchgate.net/publication/43261344_Measurement_of_Soil_Water_Content_with_a_50-MHz_Soil_Dielectric_Sensor) ) eignet sich das weltweit freie ISM-Band 40.660 – 40.700 MHz dazu sehr gut.
 
 Die Geometrie der Sensorfläche muss für einen kapazitiven Sensor aber jedezeit unter der Lambda/4-Länge liegen, bei einer max. Dielektrizitätskonstante von 80 wären das bei 40 Mhz ca. 21 cm. Die Simulation mit FEMM ergab ca. 10 cm als gut geeignet.
 
 [Sensorsimulation](./docu/sensorsim01.png) die mit FEMM auf 10 cm simulierte Geometrie. Später sollen die Leiter korrosionsgeschützt in einer Innenlage verschwinden. In der weiteren Simulation und ersten Tests ergab sich auch, dass ein Abstand der Sensorfläche zu GND von 2.2 mm und eine Länge von 10 cm noch absolut ausreichend für ein gutes Signal sind. (Details dazu folgen). 
 
-![Gizmo_0V1](./docu/pgizmo01.png) - Die erste Version arbeitet mit SDI-12 und Bluetooth (Modul: [Open-SDI12-Blue](https://github.com/joembedded/Open-SDI12-Blue) )
+![Gizmo_0V1](./docu/pgizmo01.png)  Die erste Version arbeitet mit SDI-12 und Bluetooth (Modul: [Open-SDI12-Blue](https://github.com/joembedded/Open-SDI12-Blue) )
 
 [Gizmo_0V1 - PCB, Layouts und Schaltpläne im Ordner 'docu'](./docu/)
 
