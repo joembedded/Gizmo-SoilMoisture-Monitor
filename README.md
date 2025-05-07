@@ -33,7 +33,7 @@ Kupferfläche (die in einer korrosionsgeschützten Innenlage der PCB geschützt 
 Je stärker das Anregungssignal ist, desto günstiger wird auch die Messung. Aber schnell kann daraus auch ein nicht CE-konformer Sender werden.
 Daher sind auf dem Gizmo_0V1 für die ersten Tests mehrere verschiedene Mess- und Anregungs-Systeme vorgesehen.
 
-Nach einer wissenschaftlichen Referenzstudie eines ähnlichen Sensors (u.a. "Measurement of Soil Water Content with a 50-MHz Soil Dielectric Sensor" von Mark S. Seyfried und Mark D. Murdock (2004)) eignet sich das weltweit freie ISM-Band 40.660 – 40.700 MHz dazu sehr gut. 
+Nach wissenschaftlichen Referenzstudien ähnlicher Sensoren (u.a. [Measurement of Soil Water Content with a 50-MHz Soil Dielectric Sensor – Seyfried & Murdock, 2004](https://www.ars.usda.gov/research/publications/publication/?seqNo115=167135) ) eignet sich das weltweit freie ISM-Band 40.660 – 40.700 MHz dazu sehr gut. 
 
 Die Geometrie der Sensorfläche muss für einen kapazitiven Sensor aber jedezeit unter der Lambda/4-Länge liegen, bei einer max. Dielektrizitätskonstante von 80 wären das bei 40 Mhz ca. 21 cm. Die Simulation mit FEMM ergab ca. 10 cm als gut geeignet.
 
