@@ -33,7 +33,7 @@ Es bietet sich also an, Frequenzen im Bereich > 10 Mhz und < 1Ghz zu verwenden. 
 Kupferfläche (die in einer korrosionsgeschützten Innenlage der PCB geschützt ist) verwendet und ungefähr ca. 10pF - 80pF beträgt.
 Je stärker das Anregungssignal ist, desto günstiger wird auch die Messung. Aber schnell kann daraus auch ein nicht CE-konformer Sender werden.
 
-Nach wissenschaftlichen Referenzstudien ähnlicher Sensoren (u.a. [Measurement of Soil Water Content with a 50-MHz Soil Dielectric Sensor – Seyfried & Murdock, 2004](https://www.researchgate.net/publication/43261344_Measurement_of_Soil_Water_Content_with_a_50-MHz_Soil_Dielectric_Sensor) ) eignet sich das weltweit freie ISM-Band 40.660 – 40.700 MHz dazu sehr gut.
+Nach wissenschaftlichen Referenzstudien ähnlicher Sensoren (u.a. [Measurement of Soil Water Content with a 50-MHz Soil Dielectric Sensor](https://www.researchgate.net/publication/43261344_Measurement_of_Soil_Water_Content_with_a_50-MHz_Soil_Dielectric_Sensor) ) eignet sich das weltweit freie ISM-Band 40.660 – 40.700 MHz dazu sehr gut.
 
 Die Geometrie der Sensorfläche muss für einen kapazitiven Sensor aber jedezeit unter der Lambda/4-Länge liegen, bei einer max. Dielektrizitätskonstante von 80 wären das bei 40 Mhz ca. 21 cm. Eine erste Simulation mit FEMM ergab ca. 10 cm als gut geeignet. Die Kupferflächen werden korrosionsgeschützt symetrisch auf den beiden Innenlagen platziert, Details zur Geometrie im Schaltplan.
 
