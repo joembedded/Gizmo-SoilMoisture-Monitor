@@ -39,7 +39,7 @@ Die Geometrie der Sensorfläche muss für einen kapazitiven Sensor aber jedezeit
 
 [Sensorsimulation](./docu/sensorsim01.png) die erste mit FEMM simulierte Geometrie kam dem Ergebnis schon recht nahe.
 
-Die Frage war auch, ob das 40 Mhz Signal störende Oberwellen abstrahlt (diese sind in der DIN EN 55011 / CISPR 11 definiert). Eine Freifeld-Messung ergab aber keinerlei Auffälligkeiten, selbst auf der Grundfrequenz ist die Abstrahlung noch leicht unterm allgemeinen Grenzwert, wenn also ein 40.68 MHz Oszillator verwendet wird, ist Gizmo in jedem Fall absolut im erlaubten Bereich ([EMV Messung](./docu/emv_girmo_pre.png))
+Die Frage war auch, ob das 40 Mhz Signal störende Oberwellen abstrahlt (diese sind in der DIN EN 55011 / CISPR 11 definiert). Eine Freifeld-Messung ergab aber keinerlei Auffälligkeiten, selbst auf der Grundfrequenz ist die Abstrahlung noch leicht unterm allgemeinen Grenzwert, wenn also ein 40.68 MHz Oszillator verwendet wird, ist Gizmo in jedem Fall absolut im erlaubten Bereich: [EMV Messung](./docu/emv_girmo_pre.png).
 
 ![Gizmo_0V15](./docu/pgizmo01.png)  Die erste Version arbeitet mit SDI-12 und Bluetooth (Modul: [Open-SDI12-Blue](https://github.com/joembedded/Open-SDI12-Blue) )
 
