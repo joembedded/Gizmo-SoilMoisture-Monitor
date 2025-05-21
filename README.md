@@ -33,13 +33,13 @@ Es bietet sich also an, Frequenzen im Bereich > 10 Mhz und < 1Ghz zu verwenden. 
 Kupferfläche (die in einer korrosionsgeschützten Innenlage der PCB geschützt ist) verwendet und ungefähr ca. 10pF - 80pF beträgt.
 Je stärker das Anregungssignal ist, desto günstiger wird auch die Messung. Aber schnell kann daraus auch ein nicht CE-konformer Sender werden.
 
-Nach wissenschaftlichen Referenzstudien ähnlicher Sensoren (u.a. [Measurement of Soil Water Content with a 50-MHz Soil Dielectric Sensor](https://www.researchgate.net/publication/43261344_Measurement_of_Soil_Water_Content_with_a_50-MHz_Soil_Dielectric_Sensor) ) eignet sich das weltweit freie ISM-Band 40.660 – 40.700 MHz dazu sehr gut.
+Nach wissenschaftlichen Referenzstudien vergleichbarer Sensoren (u.a. [Measurement of Soil Water Content with a 50-MHz Soil Dielectric Sensor](https://www.researchgate.net/publication/43261344_Measurement_of_Soil_Water_Content_with_a_50-MHz_Soil_Dielectric_Sensor) ) eignet sich das weltweit freie ISM-Band 40.660 – 40.700 MHz dazu sehr gut. In Deutschland sind hier bis zu 10 mW Sendeleistung erlaubt ([SRD Verfügung](https://www.bundesnetzagentur.de/SharedDocs/Downloads/DE/Sachgebiete/Telekommunikation/Unternehmen_Institutionen/Frequenzen/Allgemeinzuteilungen/FunkanlagenGeringerReichweite/2018_05_SRD_pdf.pdf?__blob=publicationFile&v=1)).
 
 Die Geometrie der Sensorfläche muss für einen kapazitiven Sensor aber jedezeit unter der Lambda/4-Länge liegen, bei einer max. Dielektrizitätskonstante von 80 wären das bei 40 Mhz ca. 21 cm. Eine erste Simulation mit FEMM ergab ca. 10 cm als gut geeignet. Die Kupferflächen werden korrosionsgeschützt symetrisch auf den beiden Innenlagen platziert, Details zur Geometrie im Schaltplan.
 
 [Sensorsimulation](./docu/sensorsim01.png) die erste mit FEMM simulierte Geometrie kam dem Ergebnis schon recht nahe.
 
-Die Frage war auch, ob das 40 Mhz Signal störende Oberwellen abstrahlt (diese sind in der DIN EN 55011 / CISPR 11 definiert). Eine Freifeld-Messung ergab aber keinerlei Auffälligkeiten, selbst auf der Grundfrequenz ist die Abstrahlung noch leicht unterm allgemeinen Grenzwert, wenn also ein 40.68 MHz Oszillator verwendet wird, ist Gizmo in jedem Fall absolut im erlaubten Bereich: [EMV Messung](./docu/emv_girmo_pre.png).
+Die Frage war auch, ob das 40 Mhz Signal störende Oberwellen abstrahlt (diese sind in der DIN EN 55011 / CISPR 11 definiert). Eine Freifeld-Messung ergab aber keinerlei Auffälligkeiten, selbst auf der Grundfrequenz ist die Abstrahlung noch leicht unterm allgemeinen Grenzwert, wenn also ein 40.68 MHz Oszillator verwendet wird, ist Gizmo in jedem Fall absolut im erlaubten Bereich (der Grenzwert für SRD ist bei ca. 105 dBµV/m): [EMV Bewertung](./docu/emv_girmo_pre.png).
 
 ![Gizmo_0V15](./docu/pgizmo01.png)  Die erste Version arbeitet mit SDI-12 und Bluetooth (Modul: [Open-SDI12-Blue](https://github.com/joembedded/Open-SDI12-Blue) )
 
