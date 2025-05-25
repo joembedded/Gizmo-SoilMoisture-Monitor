@@ -46,16 +46,23 @@ void tb_init(void) {
 
 #define LED_PIN PA4  // Standard LED gg. VCC
 
-#define MAX_RXANZ 51  // Anzahl maximal zu empfangender Bytes
+#define MAX_PAYBUF_ANZ 51  // Anzahl maximal zu empfangender/sender Bytes
 typedef struct {
   struct {                               // Connection Sachen
-    uint32_t last_server_reply_runtime;  // Wann zum letzten Mal was vom Server vernommen? Joind oder Reply
-    bool dbg;                            // Manuell setzen fuer maximal Blabla
+    uint32_t last_server_reply_runtime;  // Wann zum letzten Mal was vom Server vernommen? Reply
+    // bool dbg;                            // Manuell setzen fuer maximal Blabla
+
+    // Hier z.B. noch RSSI / SNR vom RX-CB
   } con;
-  struct {           // Gesetzte Parameter
-    uint8_t rxport;  // Msg vom Server
-    uint8_t rxanz;   // Hier die Nachricht
-    uint8_t rxbytes[MAX_RXANZ + 1];
+  struct {                                // Gesetzte Parameter
+    uint8_t rxport;                       // Msg vom Server
+    uint8_t rxanz;                        // empfangene Nachricht
+    uint8_t rxbytes[MAX_PAYBUF_ANZ + 1];  // Da String sein kann
+
+    uint8_t txanz;                         // Zu sendende Nachricht wenn >0
+    uint8_t txport;                        // Zu sendender Port, 1-223 erlaubt
+    uint8_t txbytes[MAX_PAYBUF_ANZ + 32];  // Immer Binaer, aber technische Reserve
+
   } par;
 } MLORA_INFO;                  // Modem Lora Info
 extern MLORA_INFO mlora_info;  // Modem Lora Info
@@ -82,6 +89,20 @@ extern bool param_dirty;  // True wenn dirty
 /* Watchdog wird empfohlen, wenn aus: Raster max. 120 sec, sonst Raster max. 30*/
 PARAM param = { _PMAGIC, "", 3600, 6, 1, /*WD*/ true, { 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0 } };
 bool param_dirty = false;
+
+typedef struct {
+  int16_t flags;  // 15 Bits Flags oder wenn <0: Error / "Reason"
+                  // &128:RESET
+                  // (&64:Alarm)
+                  // (&32alterAlarm)
+                  // &15: Reason: 2:Auto, 3 Manual, Rest n.d.
+
+  uint8_t hk_dcnt;  // Bei 0: in jedem Fall HK Mitmessen
+  bool hk_valid;    // True wenn Valid fuer diese Messung
+} MTIMES;
+extern MTIMES mtimes;  // Measure Intern
+MTIMES mtimes;         // Measure Intern
+
 
 // Periodic
 uint32_t next_periodic_runtime;  // Messen wenn runtime >= next_periodic_runtime
@@ -141,6 +162,16 @@ void apptimer_timer_handler(void *data) {
 #endif
   } else {
     Serial.printf("[PERIODIC %u]\n", now_runtime);
+
+    Serial.printf("Auto Transfer...\n");
+    mtimes.flags |= 0x12;      // Messung und Transfer starten. Mind mal AUTO
+    int16_t res = measure(0);  // Kann auch allg. Fehler lefern
+    if (res >= 0) {
+      res = lora_transfer();
+    }
+    if (!res) Serial.printf("Transfer OK\n");
+    else Serial.printf("ERROR: %d\n", res);
+
     while (next_periodic_runtime <= now_runtime) next_periodic_runtime += param.period;
   }
 }
@@ -209,8 +240,7 @@ int16_t parameter_nvm_save(void) {                                              
 // Messen START
 // F16-Helper START
 // Simuliert Float16 auf ARDUINO - Nur als One-Way-Konversion fuer UPLINK vorgesehen!
-#define __fp16 uint16_t
-__fp16 float_to_half(float f) {
+uint16_t float_to_half(float f) {
   union {
     float f;
     uint32_t u;
@@ -244,11 +274,6 @@ typedef union {  // Umwandlung FLOAT->Binaer
   float fval;
 } FXVAL;
 
-typedef union {  // Umwandlung FLOAT->FLOAT16->Binaer
-  uint16_t uval;
-  __fp16 f16val;
-} FX16VAL;
-
 #define NO_ERROR 0
 // Darstellung einer allgemeinen Fliesskommazahl mit Option zum Fehler:
 typedef struct {
@@ -264,11 +289,6 @@ typedef struct {
 extern CHANNEL_VALUE channel_value[MAX_CHANNELS];
 extern uint16_t anz_values;  // Anzahl der Messwerte
 
-typedef struct {
-  uint8_t hk_dcnt;  // Bei 0: in jedem Fall HK Mitmessen
-  bool hk_valid;    // True wenn Valid fuer diese Messung
-} MTIMES;
-extern MTIMES mtimes;  // Measure Intern
 
 #define HK_MAXANZ 4
 #define HK90_VBAT 0                // Bat in mV Index
@@ -279,7 +299,6 @@ extern float hk_value[HK_MAXANZ];  // alt: int16!
 
 CHANNEL_VALUE channel_value[MAX_CHANNELS];
 uint16_t anz_values;        // Anzahl der Messwerte
-MTIMES mtimes;              // Measure Intern
 float hk_value[HK_MAXANZ];  // Neu: HL als Float
 
 // Minimal HK
@@ -368,23 +387,263 @@ int16_t lora_setup(uint8_t band) {
   api.lorawan.cfm.set(1);                        // Aber TX bestaetigen lassen
   api.lorawan.dr.set(0);                         // Falls evtl. noch > 0 von zuvor
   api.lorawan.adr.set(1);                        // !!!Automatic Data Reduction An, nicht sinnvoll fuer Moving Devices!!!
-  api.system.lpmlvl.set(2);                      // Enable LowPowerMode
-  api.system.lpm.set(1);                         // Enable Low Power
   return res;
 }
+
+// lora_transfer() und Zubehoer
+// Payload_flags
+#define PLWITH_ALL 3  // Kombi
+#define PLWITH_VALUES 1
+#define PLWITH_HK 2
+
+uint8_t *measure_payoff_lorahdr(void) {
+  uint8_t *pu = mlora_info.par.txbytes;  //  MAX_PYBUF_AND+32 Platz
+  *pu++ = mtimes.flags;
+  return pu;
+}
+/******************************************************************************************
+ * Komprimierte Daten generieren -BYTES
+ * uint8_t* measure_payoff(uint8_t *pu) 
+ * Optimierte Version fuer LTX-Payload. Zusammenbau der Payload etwas komplizierter,
+ * dafuer sehr platzsparend . F16-Check: https://evanw.github.io/float-toy/
+ *
+ * Aufloesung F16/32 via +1000 im fPort == param.sensor_profile (aber dann halt fuer alle)
+ **************************************************************************************/
+uint8_t *measure_payoff_mess(uint8_t *pu, uint8_t payload_flags) {
+  /* Kanaele 0..89: "cursor"= Kanal implizit bei 0
+   * Dann 0Fxxxxxx 6 Bits Anzahl  F:0:Float32, F:1:Float16 xx: Anzahl folgend, bei 0: cursor folgt
+   *      1bbbbbbb 7 Bits HK, startet mnd. ab 90, wenn mehr als 7 HK: 2*
+   * Hier eh nur max. 25 Kanale mgl. wg. LoRa Payload-Laenge <= 51 Bytes
+   */
+  if (payload_flags & PLWITH_VALUES) {
+    uint16_t mcursor = 0;
+    // ---F16---
+    if ((param.sensor_profile / 1000) == 1) {  // 1k-Flag im potz: Alles auf F16, sonst F32
+      uint16_t anzf16 = (uint8_t)anz_values;   //
+      *pu++ = (anzf16 | 64);                   // anz F16 folgen
+      while (anzf16--) {
+        uint16_t fx16vu;
+
+        if (channel_value[mcursor].fe.errno == NO_ERROR) {
+          fx16vu = float_to_half(channel_value[mcursor].fe.floatval);
+        } else {
+          fx16vu = 0xFC00 | (channel_value[mcursor].fe.errno & 1023);
+        }
+        *pu++ = (uint8_t)(fx16vu >> 8);
+        *pu++ = (uint8_t)(fx16vu);
+        mcursor++;
+      }
+      // ---F32---
+    } else {
+      uint16_t anzf32 = anz_values;
+      *pu++ = (uint8_t)anzf32;  // anz F32 folgen
+      while (anzf32--) {
+        FXVAL fxv;
+        if (channel_value[mcursor].fe.errno == NO_ERROR) {
+          fxv.fval = channel_value[mcursor].fe.floatval;
+        } else {
+          // alle 16k Fehler darstellbar
+          fxv.ulval = 0xFF800000 | channel_value[mcursor].fe.errno;
+        }
+        *pu++ = (uint8_t)(fxv.ulval >> 24);
+        *pu++ = (uint8_t)(fxv.ulval >> 16);
+        *pu++ = (uint8_t)(fxv.ulval >> 8);
+        *pu++ = (uint8_t)(fxv.ulval);
+
+        mcursor++;
+      }
+    }
+  }
+
+  if (payload_flags & PLWITH_HK) {
+    *pu++ = (uint8_t)(0x80 | (HK_FLAGS & 127));  // HK ist FIX erstmal
+    float fval;
+    uint16_t fx16vu;
+    // Fuer Simple-Gateway HKs fix
+#if HK_FLAGS & 1
+    fx16vu = float_to_half(hk_value[HK90_VBAT]);
+    *pu++ = (uint8_t)(fx16vu >> 8);
+    *pu++ = (uint8_t)(fx16vu);
+
+#endif
+#if HK_FLAGS & 2
+    fx16vu = float_to_half(hk_value[HK91_TEMP]);
+    *pu++ = (uint8_t)(fx16vu >> 8);
+    *pu++ = (uint8_t)(fx16vu);
+#endif
+#if HK_FLAGS & 4
+    x  // Hum fehlt noch *todo*
+#endif
+#if HK_FLAGS & 8
+      fx16vu = float_to_half(hk_value[HK93_MAH]);
+    *pu++ = (uint8_t)(fx16vu >> 8);
+    *pu++ = (uint8_t)(fx16vu);
+#endif
+  }
+  return pu;
+}
+
+// Vor den Callbacks
+int16_t send_txplayload(void) {
+  if (!mlora_info.par.txanz) {
+    Serial.println("ERROR: Nothing to send");
+    return -2011;
+  }
+  if (!api.lorawan.send(mlora_info.par.txanz, mlora_info.par.txbytes, mlora_info.par.txport)) {
+    Serial.println("ERROR: Send failed");  // Bool
+    return -2010;
+  }
+  Serial.println("Send OK");
+  return 0;
+}
+
+uint16_t rejoins = 0;  // Retry-Counter
+void join_cb(int32_t status) {
+  if (status == RAK_LORAMAC_STATUS_OK) {
+    rejoins = 0;
+    Serial.println("Network joined");
+    send_txplayload();  // Sollte da sein
+  } else {
+    Serial.printf("ERROR: %d, Join failed\n", status);
+    if (rejoins) {
+      Serial.printf("Retry(%u) Join Network...\n", rejoins);
+      rejoins--;
+      api.lorawan.join();
+    }
+  }
+}
+
+// Lora Callbacks -> SERVICE_LORA_RECEIVE_T https://docs.rakwireless.com/product-categories/software-apis-and-libraries/rui3/lorawan#service_lora_receive_t
+void recv_cb(SERVICE_LORA_RECEIVE_T *data) {
+  mlora_info.con.last_server_reply_runtime = now_runtime;
+  uint8_t rlen = data->BufferSize;
+
+  Serial.printf("RX-CB %u Bytes received on Port %u\n", rlen, data->Port);
+  Serial.printf("RxDR:%u RSSI:%d SNR:%d DL-Counter:%u\n", data->RxDatarate, data->Rssi, data->Snr, data->DownLinkCounter);
+
+  if (rlen) {
+    Serial.printf("Data: ");
+    for (int i = 0; i < rlen; i++) {
+      Serial.printf("%02x", data->Buffer[i]);
+    }
+    Serial.print(" '");
+    for (int i = 0; i < rlen; i++) {
+      Serial.printf("%c", data->Buffer[i]);
+    }
+    Serial.print("'\n");
+  }
+}
+
+
+void send_cb(int32_t status) { // Sagt i.d.R. einfach nur 0, ca. 3 sec. nach send ??? Gut vlt. fuer ne LED?
+  if(status == RAK_LORAMAC_STATUS_OK) Serial.printf("SEND-CB Send OK\n");
+  else Serial.printf("SEND-CB Send status: %d\n", status);
+}
+
+void linkcheck_cb(SERVICE_LORA_LINKCHECK_T *data) {
+  Serial.println("LINKCHECK-CB:");
+  Serial.printf("-State:%u\r\n", data->State);
+  Serial.printf("-DemodMargin:%u\r\n", data->DemodMargin);
+  Serial.printf("-NbGateways:%u\r\n", data->NbGateways);
+  Serial.printf("-rssi:%u\r\n", data->Rssi);
+  Serial.printf("-snr:%u\r\n", data->Snr);
+}
+
+
+void timereq_cb(int32_t status) {
+  Serial.println("TIMEREQ-CB");
+  if (status == GET_DEVICE_TIME_OK) {
+    Serial.println("Get device time success");
+  } else if (status == GET_DEVICE_TIME_FAIL) {
+    Serial.println("Get device time fail");
+  }
+}
+// ---CB End
+
+int16_t lora_transfer(void) {
+  uint8_t *phu = measure_payoff_lorahdr();
+  phu = measure_payoff_mess(phu, mtimes.hk_valid ? PLWITH_ALL : PLWITH_VALUES);
+  int16_t paylen = (phu - mlora_info.par.txbytes);
+  Serial.printf("LoRa-Transfer%s (%d Bytes)\n", mtimes.hk_valid ? " with HK" : "", paylen);
+  if (paylen > MAX_PAYBUF_ANZ) {
+    Serial.printf("ERROR: Payload too large, clipped to %u Bytes\n", MAX_PAYBUF_ANZ);
+    paylen = MAX_PAYBUF_ANZ;  // Better soemthing than nothing
+  }
+  mlora_info.par.txanz = (uint8_t)paylen;
+  mlora_info.par.txport = (param.sensor_profile % 1000) & 255;
+  if (mlora_info.par.txport < 1 || mlora_info.par.txport > 223) {
+    Serial.printf("ERROR: Invalid fPort %d: set to 1\n", mlora_info.par.txport);
+    mlora_info.par.txport = 1;
+  }
+  // Show Payload
+  Serial.printf("P[%u]:", mlora_info.par.txport);
+  for (uint16_t i = 0; i < paylen; i++) Serial.printf("%02X", mlora_info.par.txbytes[i]);
+  Serial.printf("\n");
+
+  // No Net: Join - *todo* Errors/NoReply/..: Rejoin
+  if (!api.lorawan.njs.get()) {
+    Serial.printf("Join Network...\n");
+    rejoins = 2;  // 1+2 Versuche
+    api.lorawan.join();
+  } else {
+    send_txplayload();
+  }
+
+
+
+  return 0;
+}
+
+
 
 // Kommando-Handler nimmt nur Strings, Ret: 0: OK. Ohne WS!
 int16_t parse_ltx_cmd(char *pc) {
   int16_t res = 0;  // Assume OK
   if (!strcasecmp(pc, "initeu868")) {
-    res = lora_setup(4);              // Band 4:868 MHz
-  } else if (!strcasecmp(pc, "?")) {  // ?: Reine Info
-    Serial.printf("DEVICE_TYPE: %u\n", DEVICE_TYPE);
+    res = lora_setup(4);                // Band 4:868 MHz
+  } else if (str_cmatch("cred", pc)) {  // cred.. : Credentials and Setup
+    uint8_t buff[16];
+    Serial.printf("Credentials:\nDEVEUI: ");
+    api.lorawan.deui.get(buff, 8);
+    for (uint16_t i = 0; i < 8; i++) Serial.printf("%02X", buff[i]);
+    Serial.printf("\nAPPEUI: ");
+    api.lorawan.appeui.get(buff, 8);
+    for (uint16_t i = 0; i < 8; i++) Serial.printf("%02X", buff[i]);
+    Serial.printf("\nAPPKEY: ");
+    api.lorawan.appkey.get(buff, 16);
+    for (uint16_t i = 0; i < 16; i++) Serial.printf("%02X", buff[i]);
+    Serial.printf("\nBand[Rec.:4]: ");
+    uint16_t band = api.lorawan.band.get();
+    Serial.printf("%d ", band);
+    switch (band) {
+      case 4:
+        Serial.printf("(EU868)\n");  // Recom
+        break;
+      default:
+        Serial.printf("(unknown)\n");
+    }
+    Serial.printf("Activation[Rec.:1]: (0:ABP/1:OTAA): %d\n", api.lorawan.njm.get());  // 1 Recom
+    Serial.printf("Retrans.Conf.RX[Rec.:0]: %d\n", api.lorawan.rety.get());            // 0 Recom
+    Serial.printf("Confirm TX[Rec.:1]: %d\n", api.lorawan.cfm.get());                  // 1 Recom
+    Serial.printf("Adaptive Datarate[Rec.:1]: %d\n", api.lorawan.adr.get());           // 1 Recom (aber !!!Automatic Data Reduction An, nicht sinnvoll fuer Moving Devices!!!)
 
+  } else if (str_cmatch("?", pc)) {  // ?: Reine Info-Fkt oder ?k Koeficients
+    Serial.printf("Info:\n");
+    Serial.printf("DEVICE_TYPE: %u\n", DEVICE_TYPE);
     update_runtime();
     Serial.printf("Runtime: %d sec\n", now_runtime);
-    if (mlora_info.con.last_server_reply_runtime) Serial.printf("LastServerReply:%d sec ago\n", now_runtime - mlora_info.con.last_server_reply_runtime);
-    else Serial.printf("No Network!\n");
+    if (api.lorawan.njs.get()) {
+      uint8_t buff[4];
+      api.lorawan.daddr.get(buff, 4);
+      Serial.printf("Joined (DEVADDR: %02X%02X%02X%02X)\nLastServerReply: ", buff[0], buff[1], buff[2], buff[3]);
+      if (mlora_info.con.last_server_reply_runtime) {
+        Serial.printf("%d sec ago\n", now_runtime - mlora_info.con.last_server_reply_runtime);
+      } else Serial.printf("Never!\n");
+      Serial.printf("Datarate: %d\n", api.lorawan.dr.get());
+
+    } else {
+      Serial.printf("No Network!\n");
+    }
     if (param._pmagic != _PMAGIC) {
       Serial.printf("ERROR: Parameter invalid\n");
     } else {
@@ -393,13 +652,11 @@ int16_t parse_ltx_cmd(char *pc) {
       Serial.printf("HK-Reload: %u\n", param.hk_reload);
       Serial.printf("Profile: %u\n", param.sensor_profile);
       Serial.printf("Use Watchdog: %u\n", param.use_watchdog);
-      for (uint16_t i = 0; i < ANZ_KOEFF; i++) {
-        Serial.printf("koeff[%u]: %f\n", i, param.koeff[i]);
-      }
+
       if (param_dirty) Serial.printf("INFO: Parameter not saved!\n");
     }
   } else if (!strcasecmp(pc, "write")) {  // Write Parameter
-    Serial.printf("Write\n");
+    Serial.printf("Write Parameter\n");
     res = parameter_nvm_save();
   } else if (!strcasecmp(pc, "factoryreset")) {  // FactoryReset
     param._pmagic = 0;
@@ -455,15 +712,21 @@ int16_t parse_ltx_cmd(char *pc) {
     param_dirty = true;
     Serial.printf("Use Watchdog: %u\n", param.use_watchdog);
   } else if (str_cmatch("k", pc)) {
-    uint16_t idx = strtoul(pc + 1, &pc, 10);
-    if (idx < 0 || idx >= ANZ_KOEFF) res = -2002;  // Ilegal Index
-    else if (*pc == '=') {
-      float nkf = strtof(pc + 1, &pc);
-      if (*pc) res = -2004;  // Format
-      else {
-        param.koeff[idx] = nkf;
-        param_dirty = true;
-        Serial.printf("koeff[%u]: %f\n", idx, nkf);
+    if (*(pc + 1)) {
+      uint16_t idx = strtoul(pc + 1, &pc, 10);
+      if (idx < 0 || idx >= ANZ_KOEFF) res = -2002;  // Ilegal Index
+      else if (*pc == '=') {
+        float nkf = strtof(pc + 1, &pc);
+        if (*pc) res = -2004;  // Format
+        else {
+          param.koeff[idx] = nkf;
+          param_dirty = true;
+          Serial.printf("koeff[%u]: %f\n", idx, nkf);
+        }
+      }
+    } else {  // Ohne was einfach nur zeigen
+      for (uint16_t i = 0; i < ANZ_KOEFF; i++) {
+        Serial.printf("koeff[%u]: %f\n", i, param.koeff[i]);
       }
     }
   } else if (str_cmatch("e", pc)) {            // e Messen
@@ -498,15 +761,36 @@ int16_t parse_ltx_cmd(char *pc) {
     x  // *todo* HUM
 #endif
 #if HK_FLAGS & 8
-      Serial.printf("H93:Energy: %.4f mAh\n", hk_value[HK93_MAH]);
+      Serial.printf("H93:Energy: %.3f mAh\n", hk_value[HK93_MAH]);
 #endif
     // Bissl Blabla
     if (param_dirty) Serial.printf("INFO: Parameter not saved!\n");
+
+  } else if (str_cmatch("i", pc)) {            // Transmit - Manuell immer als 'e1'
+    uint16_t ival = strtoul(pc + 1, &pc, 10);  // Mess-Param
+    Serial.printf("Manual Transfer(%u)...\n", ival);
+    if (ival) mtimes.hk_dcnt = 0;  // Parameter in jedem Fall mit HK
+    mtimes.flags &= 0xF0;          // flags, Rest vergessen
+    mtimes.flags |= 3;             // 3 Manual Transfer, ueberschreibt evAlarme
+    res = measure(ival);           // Kann auch allg. Fehler lefern
+    if (res >= 0) {
+      res = lora_transfer();
+    }
   } else if (str_cmatch("xxx", pc)) {  // DEBUG: xxx fuer internes
     Serial.printf("---xxx---\n");
     for (uint16_t i = 0; i < 8; i++) {
       Serial.printf("t[%u]: %x %d\n", i, _tb_novo[i], _tb_novo[i]);
     }
+
+    /* Das scheint nicht zu klappen
+    struct tm * localtime;
+    api.lorawan.ltime.get(localtime);
+    Serial.printf("Current local time : %d:%d:%d\n", localtime->tm_hour, localtime->tm_min, localtime->tm_sec);
+    */
+    char local_time[30] = {0};
+    service_lora_get_local_time(local_time);
+    Serial.printf("LTime:'%s'\n",local_time); // '23h59m54s on 05/24/2025' Anm.:24.5.2025 (=US-Format)
+
   } else res = -2001;  // Command Unknown
   return res;          // OK
 }
@@ -518,7 +802,7 @@ int ltx_cmd_handler(SERIAL_PORT _port, char *cmd, stParam *param) {
   if (param->argc != 1) res = -2009;
   else res = parse_ltx_cmd(param->argv[0]);
   if (res) {
-    Serial.printf("ERROR: %d\n",res);
+    Serial.printf("ERROR: %d\n", res);
     return AT_PARAM_ERROR;
   }
   return AT_OK;
@@ -565,9 +849,14 @@ void setup() {
   Serial.printf("MAC:%08X%08X DEVICE_TYPE:%u V%u.%u\n", get_mac_h(), get_mac_l(), DEVICE_TYPE, DEVICE_FW_VERSION / 10, DEVICE_FW_VERSION % 10);
   Serial.printf("RUI3-Version %s\n\n", api.system.firmwareVersion.get().c_str());
 
+  if (api.system.lpmlvl.get() != 2) api.system.lpmlvl.set(2);  // Enable LowPowerMode
+  if (api.system.lpm.get() != 1) api.system.lpm.set(1);        // Enable Low Power
+
+
   parameter_nvm_load();
   if (param.period < 10) param.period = 10;  // Min. 10 sec period
   next_periodic_runtime = 30;                // Fruehestens nach 30 Sekunden 1. Messung
+  mtimes.flags = 128 + 2;                    // mtimes.flags: RESET Signalisieren und naechste UE vmtl. AUTOMATISCH
 
   if (param.use_watchdog) {
     res = jo_wdt_init();
@@ -587,6 +876,13 @@ void setup() {
     if (api.system.timer.create(RAK_TIMER_0, (RAK_TIMER_HANDLER)apptimer_timer_handler, RAK_TIMER_PERIODIC) != true) res = -1001;  // Timer0 Faile1
     else if (api.system.timer.start(RAK_TIMER_0, (int_sec * 1000), (void *)0) != true) res = -1002;                                // Timer0 Fail2
   }
+
+  api.lorawan.registerJoinCallback(join_cb);
+  api.lorawan.registerRecvCallback(recv_cb);
+  api.lorawan.registerSendCallback(send_cb);
+
+  api.lorawan.registerTimereqCallback(timereq_cb);
+  api.lorawan.registerLinkCheckCallback(linkcheck_cb);
 
   // 0: OK
   if (res) {
