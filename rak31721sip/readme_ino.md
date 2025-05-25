@@ -54,6 +54,7 @@ Dieser Sketch implementiert einen vollständigen LoRaWAN (LTX) Knoten, optimiert
 
 - Simuliert Sensordaten
 
+.....
 <hr>
 
 # RAK3272_modul_lora_lp_test.ino  - ENGLISH
@@ -166,5 +167,3 @@ This sketch implements a complete LoRaWAN (LTX) node, optimized for ultra-low-po
 - Review and adjust energy calculation constants for your specific hardware.
 
 ---
-
-If you need more detailed explanations of any code section or function, let me know!
