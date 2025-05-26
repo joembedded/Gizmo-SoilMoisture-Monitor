@@ -30,7 +30,8 @@ Oversampling wohl nicht vorgesehen oder implementiert in RUI3
 #define HK_FLAGS 11                    // 1:V 2:T 4:H: 8:E Spaeter noch evtl. rH/T
 #define ANZ_KOEFF 8                    // Koefficients for Measure, Minimum 4*2
 #define MAX_CHANNELS 4                 // Macht Sinn das mit ANZ_KOEFFS zu kombinieren
-#define START_DELAY_SEC 60             // Start LoRa after x sec
+#define START_DELAY_SEC 30             // Start LoRa after x sec
+#define USER_CREDENTIAL_SEED    (get_mac_l())  // Dynamic/Random or Static, see Docu
 
 // 3V3:
 #define MESSEN_ENERGY 1000  // Annahme erstmal 1mA fuer 1000 msec
@@ -173,7 +174,7 @@ int16_t jo_wdt_init(void) {
   return 0;
 }
 
-/* --- Analog-Routinen -----
+/* --- Analog-Routinen, see AN2668 -----
 * extern analog PINs:
 *   PB3   PB4  PB2  A10  A15
 * intern analog channels:
@@ -192,7 +193,7 @@ int16_t analog_read_single(uint32_t apin) {
 }
 /* Mehrfachmessung. Evtl. WD bedienen!
 * Result: 0.0 .. 4095.0 entspr 0..3600 mV (?) */
-float analog_read_multi(uint32_t pin, uint16_t manz) {  // manz: >0!
+float analog_read_average(uint32_t pin, uint16_t manz) {  // manz: >0!
   int32_t temp32 = 0;
   for (uint16_t i = 0; i < manz; i++) {
     int16_t temp16;
@@ -204,7 +205,7 @@ float analog_read_multi(uint32_t pin, uint16_t manz) {  // manz: >0!
 /* Read internal Temperature, Recommended: manz 4-10
 * CPU comes with calibration Coeffs () (+/- 5°C!) */
 float analog_read_internal_temp(uint16_t manz) {
-  float tempadf = analog_read_multi(UDRV_ADC_CHANNEL_TEMPSENSOR, manz);
+  float tempadf = analog_read_average(UDRV_ADC_CHANNEL_TEMPSENSOR, manz);
   int16_t tcal30 = *(uint16_t *)0x1FFF75A8;   // ca. 950 Ausm Datenblatt 3.18.1
   int16_t tcal130 = *(uint16_t *)0x1FFF75C8;  // ca. 1200
   if (tcal130 > tcal30) return (100.0 / (float)(tcal130 - tcal30)) * (tempadf - (float)tcal30) + 30.0;
@@ -220,6 +221,7 @@ float analog_read_internal_temp(uint16_t manz) {
 * Wichtig: Watchdog alle <= 32 Sekunden feeden!*/
 void apptimer_timer_handler(void *data) {
 
+  digitalWrite(LED_PIN, LOW);  // LED ON
 
   if (wdt_in_use) jo_wdt_feed();  // Verifiziert: WD loest sauber 32 sec nach letztem feed aus
   update_runtime();
@@ -243,6 +245,7 @@ void apptimer_timer_handler(void *data) {
 
     while (next_periodic_runtime <= now_runtime) next_periodic_runtime += param.period;
   }
+  digitalWrite(LED_PIN, HIGH);  // LED OFF
 }
 
 //------ JoEmb Toolbox---------
@@ -279,7 +282,7 @@ void set_my_rbytes(uint8_t *pu, int16_t anz) {
   }
 }
 // String-Matcher Match "what" ind *pstr
-bool str_cmatch(const char *what, char *pstr) {
+bool str_cmatch(const char *what, const char *pstr) {
   uint8_t c;
   for (;;) {
     c = *what++;
@@ -353,7 +356,7 @@ typedef struct {
 typedef struct {
   FE_ZAHL fe;  // Der Messwert
   // Optional Platz fuer Meta-Daten, z.B. Typ-spec Einheiten
-  char *unit;  // Fuer "e": Einheit zum Anzeigen oder NULL
+  const char *unit;  // Fuer "e": Einheit zum Anzeigen oder NULL
 } CHANNEL_VALUE;
 
 extern CHANNEL_VALUE channel_value[MAX_CHANNELS];
@@ -371,13 +374,38 @@ CHANNEL_VALUE channel_value[MAX_CHANNELS];
 uint16_t anz_values;        // Anzahl der Messwerte
 float hk_value[HK_MAXANZ];  // Neu: HL als Float
 
-// User-Measure-Routinen
+// User-Setup/Measure-Routinen
+#define ANAPIN PB4 // - am SIP-Eval hinten! Init auf Output!
+void user_setup(void){
+  analog_setup();               // Enable analog Routines
+  analog_read_single(ANAPIN);   // Force Port to Analog mode
+}
 float user_measure_battery(void) {
-  return api.system.bat.get();
+  return api.system.bat.get();  // Auf RAK3172-SIP OK
 }
 float user_measure_temperature(void) {
   return analog_read_internal_temp(10);  // 8 msec Auslagern
 }
+
+/* Simulierte Messung
+* Feeding the Watchdg required if takes >1 sec 
+* AD ist nicht allzu transparent, misst wohl auf VCC als Spanne
+* und hat Bandgap VREF als Kanal mit hinterlegtem Wert fuer 3V3..
+*/
+int16_t user_measure(int16_t ival){
+  // Evtl. linearisieren, z.B. .floatval = (fval * param.koeff[x]) - param.koeff[x+1]
+  channel_value[0].fe.errno = 0;  // Im Fehlerfall Code
+  channel_value[0].fe.floatval = analog_read_average(ANAPIN,100) / 4096.0 * 3300 ; // in mV
+  channel_value[0].unit = "(anaPB4)";  // Fuer Display
+  channel_value[1].fe.errno = 0;
+  uint16_t refval3v3 = *(uint16_t*)0x1FFF75AA; // VREFINT_CAL at 3V3
+  Serial.printf("Ref: %u\n",refval3v3);
+  channel_value[1].fe.floatval = (float)analog_read_single(UDRV_ADC_CHANNEL_VREFINT); 
+  channel_value[1].unit = "(vref)";  // Fuer Display
+  anz_values = 2;                     // global
+  return 0; // OK - keine Uebertragung wenn <0
+}
+// Ende User-Routinen
 
 // Minimal HK
 void measure_hk(void) {
@@ -410,40 +438,26 @@ void hk_add_energy(uint32_t mAmSec) {
 }
 #endif
 
-
-/*  -- Simulation-- Typspezifisch messen. 
+/* Typspezifisch messen. 
 * Mehrere Moeglichkeiten, bei ival>0 immer HK Mitmessen
 * "Regulaere" Messung ival=0
 * Feeding the Watchdg required if takes >1 sec */
 
 int16_t measure(int16_t ival) {
+  // First User Measure
+  int16_t ures = user_measure(ival);
+  // Optionally HK
   if (!mtimes.hk_dcnt || ival) {
-    measure_hk();
     mtimes.hk_dcnt = param.hk_reload;
+    measure_hk();
   } else {
     mtimes.hk_dcnt--;
     mtimes.hk_valid = 0;
   }
-
-  // Simulierte Messung
-  int16_t bat16;
-  udrv_adc_read(UDRV_ADC_CHANNEL_VBAT, &bat16);
-  int16_t ref16;
-  udrv_adc_read(UDRV_ADC_CHANNEL_VREFINT, &ref16);
-
-  // Evtl. linearisieren, z.B. .floatval = (fval * param.koeff[x]) - param.koeff[x+1]
-  channel_value[0].fe.errno = 0;  // Im Fehlerfall Code
-  channel_value[0].fe.floatval = (float)bat16;
-  channel_value[0].unit = "(bat16)";  // Fuer Display
-  channel_value[1].fe.errno = 0;
-  channel_value[1].fe.floatval = (float)ref16;
-  channel_value[1].unit = "(ref16)";  // Fuer Display
-  anz_values = 2;                     // global
-
-#if (HK_FLAGS & 8)
+  #if (HK_FLAGS & 8)
   hk_add_energy(MESSEN_ENERGY);  // Energy fuer 1 Messung
 #endif
-  return anz_values;
+  return ures;
 }
 // Messen Ende
 
@@ -455,7 +469,7 @@ int16_t measure(int16_t ival) {
 int16_t lora_setup(uint8_t band) {
   int16_t res = 0;  // Assume OK
   // Keys setzen und init  LoRaWAN credentials
-  my_seed(get_mac_l());      // Immer die selbe Sequenz, abh. von MAC
+  my_seed(USER_CREDENTIAL_SEED);      // Immer die selbe Sequenz, abh. von MAC
   uint32_t h = get_mac_h();  // LTX: Big Endian Style
   uni_buf[0] = (uint8_t)(h >> 24);
   uni_buf[1] = (uint8_t)(h >> 16);
@@ -604,11 +618,11 @@ void menu_parse_payload(char *pc) {
   }
   // Evtl. speichern
   if (param_dirty == true) {
-    parse_ltx_cmd("write");
+    parse_ltx_cmd((char*)"write"); // (char*) ist C++ Eigenheit
   }
 }
 
-int16_t send_txplayload(void) {
+int16_t send_txpayload(void) {
   if (!mlora_info.par.txanz) {
     Serial.println("ERROR: Nothing to send");
     return -2011;
@@ -625,7 +639,7 @@ void join_cb(int32_t status) {
   if (status == RAK_LORAMAC_STATUS_OK) {
     rejoins = 0;
     Serial.println("Network joined");
-    send_txplayload();  // Sollte da sein
+    send_txpayload();  // Sollte da sein
     mlora_info.con.join_runtime = now_runtime;
 #if HK_FLAGS & 8
     hk_add_energy(((mlora_info.par.txanz + PER_BYTE_ENERGY) * 1500) / (api.lorawan.dr.get() * 3 + 1));  // PACKET ENERGY
@@ -748,7 +762,7 @@ int16_t lora_transfer(void) {
     hk_add_energy(JOIN_ENERGY);
 #endif
   } else {
-    send_txplayload();
+    send_txpayload();
 #if HK_FLAGS & 8
     hk_add_energy(((mlora_info.par.txanz + PER_BYTE_ENERGY) * 1500) / (api.lorawan.dr.get() * 3 + 1));  // PACKET ENERGY
 #endif
@@ -800,6 +814,8 @@ int16_t show_credentials(void) {
 // Kommando-Handler nimmt nur Strings, Ret: 0: OK. Ohne WS!
 int16_t parse_ltx_cmd(char *pc) {
   int16_t res = 0;  // Assume OK
+
+  digitalWrite(LED_PIN, LOW);  // LED ON
 
   if (!strcasecmp(pc, "initeu868")) {
     res = lora_setup(4);                // Band 4:868 MHz
@@ -921,7 +937,7 @@ int16_t parse_ltx_cmd(char *pc) {
     res = measure(ival);  // Kann auch allg. Fehler lefern
     if (res >= 0) {
       CHANNEL_VALUE *pkv = channel_value;
-      for (int16_t i = 0; i < res; i++) {
+      for (int16_t i = 0; i < anz_values; i++) {
         Serial.printf("#%u: ", i);
         if (pkv->fe.errno == NO_ERROR) {
           Serial.printf("%f ", pkv->fe.floatval);
@@ -963,6 +979,7 @@ int16_t parse_ltx_cmd(char *pc) {
     }
     mtimes.flags &= 0xF0;  // Manual loeschen
   } else res = -2001;      // Command Unknown
+  digitalWrite(LED_PIN, HIGH);  // LED OFF
   return res;              // OK
 }
 
@@ -1027,9 +1044,8 @@ void setup() {
   }
 
   pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, HIGH);  // LED turn on when input pin value is LOW
-  analog_setup();               // Enable analog Routines
-
+  digitalWrite(LED_PIN, LOW);  // LED ON
+  
   if (!res) res = init_ltx_ats();
 
   // WDT_TIMER (#0) - Enable WDT Background Feed
@@ -1053,11 +1069,14 @@ void setup() {
   */
 
   // 0: OK
+  digitalWrite(LED_PIN, HIGH);  // LED turn on when input pin value is LOW
   if (res) {
     Serial.printf("ERROR: setup():%d, Reset...\n", res);
     delay(10000);
     api.system.reboot();
   }
+
+  user_setup();
 }
 // Nutzloser Idle-Task, wg. Timer
 void loop() {
