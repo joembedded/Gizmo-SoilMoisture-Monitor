@@ -5,6 +5,11 @@ Dieser Sketch implementiert einen kompletten LTX-Lora-Knoten auf einem RAK3172-E
 Dazu das entsprechende Board im Arduino Board-Manager eintragen.
 Ist noch einiges zu tun (ADC, Finetuning, ..), aber Uplink, Watchdog, Payload, Download klappt bereits 1a
 
+Beispiel C: c:\dokus\Lora\rak\rui3\cores\STM32WLE\component\service\battery\service_battery.c
+driver: C:\dokus\Lora\rak\rui3\cores\STM32WLE\component\core\mcu\stm32wle5xx\uhal\uhal_adc.c
+Oversampling wohl nicht vorgesehen oder implementiert in RUI3
+
+
       LTX-Payload-Decoder: https://github.com/joembedded/payload-decoder
 
       RUI3 Doku: https://docs.rakwireless.com/product-categories/software-apis-and-libraries/rui3/arduino-api
@@ -25,9 +30,12 @@ Ist noch einiges zu tun (ADC, Finetuning, ..), aber Uplink, Watchdog, Payload, D
 #define HK_FLAGS 11                    // 1:V 2:T 4:H: 8:E Spaeter noch evtl. rH/T
 #define ANZ_KOEFF 8                    // Koefficients for Measure, Minimum 4*2
 #define MAX_CHANNELS 4                 // Macht Sinn das mit ANZ_KOEFFS zu kombinieren
-#define MESSEN_ENERGY 1000             // Annahme erstmal 1mA fuer 1000 msec
-#define PER_BYTE_ENERGY 90             // Fuer 3172-E an 3V3, Anpassen an -L
-#define JOIN_ENERGY 180000             // Fuer 3172-E an 3V3, und und vorh. Stepper
+#define START_DELAY_SEC 60             // Start LoRa after x sec
+
+// 3V3:
+#define MESSEN_ENERGY 1000  // Annahme erstmal 1mA fuer 1000 msec
+#define PER_BYTE_ENERGY 90  // Fuer 3172-E an 3V3, Anpassen an -L
+#define JOIN_ENERGY 180000  // Fuer 3172-E an 3V3, und und vorh. Stepper
 
 
 // Magic Nv.RAM fuer Energie (auch nach Reset)
@@ -95,17 +103,25 @@ typedef struct {
   float koeff[ANZ_KOEFF];
 } PARAM;
 extern PARAM param;
-extern bool param_dirty;  // True wenn dirty
+extern bool param_dirty;                   // True wenn dirty
+extern const char *koeff_desc[ANZ_KOEFF];  // Description for the coefficients
 
 /* Watchdog wird empfohlen, wenn aus: Raster max. 120 sec, sonst Raster max. 30*/
 PARAM param = { _PMAGIC, "", 3600, 6, 1, /*WD*/ true, { 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0 } };
+const char *koeff_desc[ANZ_KOEFF] = {
+  "Multi Channel #0", "Offset Channel #0",
+  "Multi Channel #1", "Offset Channel #1",
+  "unused", "unused",
+  "unused", "unused"
+};
+
 bool param_dirty = false;
 
 typedef struct {
   int16_t flags;  // 15 Bits Flags oder wenn <0: Error / "Reason"
                   // &128:RESET
-                  // (&64:Alarm)
-                  // (&32alterAlarm)
+                  // (&64:Alarm) unused here
+                  // (&32alterAlarm) unused here
                   // &15: Reason: 2:Auto, 3 Manual, Rest n.d.
 
   uint8_t hk_dcnt;  // Bei 0: in jedem Fall HK Mitmessen
@@ -157,6 +173,45 @@ int16_t jo_wdt_init(void) {
   return 0;
 }
 
+/* --- Analog-Routinen -----
+* extern analog PINs:
+*   PB3   PB4  PB2  A10  A15
+* intern analog channels:
+*   UDRV_ADC_CHANNEL_TEMPSENSOR
+*   UDRV_ADC_CHANNEL_VREFINT
+*   UDRV_ADC_CHANNEL_VBAT (see Datasheet 3.18.3)*/
+#include "udrv_adc.h"
+void analog_setup(void) {
+  udrv_adc_set_resolution(UDRV_ADC_RESOLUTION_12BIT);  // STM32 hat ADC12-Bit
+}
+// Einzelmessung, ca. 800uSec - Result: 0..4095 entspr 0..3600 mV (?)
+int16_t analog_read_single(uint32_t apin) {
+  int16_t val16;
+  udrv_adc_read(apin, &val16);
+  return val16;
+}
+/* Mehrfachmessung. Evtl. WD bedienen!
+* Result: 0.0 .. 4095.0 entspr 0..3600 mV (?) */
+float analog_read_multi(uint32_t pin, uint16_t manz) {  // manz: >0!
+  int32_t temp32 = 0;
+  for (uint16_t i = 0; i < manz; i++) {
+    int16_t temp16;
+    udrv_adc_read(pin, &temp16);  // ca. 800usec/Sample
+    temp32 += temp16;
+  }
+  return (float)temp32 / (float)manz;
+}
+/* Read internal Temperature, Recommended: manz 4-10
+* CPU comes with calibration Coeffs () (+/- 5°C!) */
+float analog_read_internal_temp(uint16_t manz) {
+  float tempadf = analog_read_multi(UDRV_ADC_CHANNEL_TEMPSENSOR, manz);
+  int16_t tcal30 = *(uint16_t *)0x1FFF75A8;   // ca. 950 Ausm Datenblatt 3.18.1
+  int16_t tcal130 = *(uint16_t *)0x1FFF75C8;  // ca. 1200
+  if (tcal130 > tcal30) return (100.0 / (float)(tcal130 - tcal30)) * (tempadf - (float)tcal30) + 30.0;
+  else return -99.0;
+}
+// Analog-End
+
 /* Kontext des Handlers ist "normal"
 * Achtung: der Timer hat einen Rahmen von 9msec @ ca. 10mA msec und selbst, Schnitt also ca. 3->7uA
 * bei Aufruf nur alle 10 sec steigt der Stromverbrauch auf Avg. 15uA!
@@ -177,9 +232,7 @@ void apptimer_timer_handler(void *data) {
     hk_add_energy(ENERGY_WDT);  // Energy fuer 1 Watchdog
 #endif
   } else {
-    Serial.printf("[PERIODIC %u]\n", now_runtime);
-
-    Serial.printf("Auto Transfer...\n");
+    Serial.printf("[PERIODIC %u] - Auto Transfer...\n", now_runtime);
     mtimes.flags |= 0x12;      // Messung und Transfer starten. Mind mal AUTO
     int16_t res = measure(0);  // Kann auch allg. Fehler lefern
     if (res >= 0) {
@@ -293,13 +346,14 @@ typedef union {  // Umwandlung FLOAT->Binaer
 #define NO_ERROR 0
 // Darstellung einer allgemeinen Fliesskommazahl mit Option zum Fehler:
 typedef struct {
-  uint16_t errno;  // 0: No ERROR
-  float floatval;
+  uint16_t errno;  // errno 0: No ERROR (1-1023 asl Fehlercode verwendbar)
+  float floatval;  // Wert nur bei errno 0 ob relevant, wird sonst ignoriert
 } FE_ZAHL;
 
 typedef struct {
   FE_ZAHL fe;  // Der Messwert
   // Optional Platz fuer Meta-Daten, z.B. Typ-spec Einheiten
+  char *unit;  // Fuer "e": Einheit zum Anzeigen oder NULL
 } CHANNEL_VALUE;
 
 extern CHANNEL_VALUE channel_value[MAX_CHANNELS];
@@ -317,14 +371,21 @@ CHANNEL_VALUE channel_value[MAX_CHANNELS];
 uint16_t anz_values;        // Anzahl der Messwerte
 float hk_value[HK_MAXANZ];  // Neu: HL als Float
 
+// User-Measure-Routinen
+float user_measure_battery(void) {
+  return api.system.bat.get();
+}
+float user_measure_temperature(void) {
+  return analog_read_internal_temp(10);  // 8 msec Auslagern
+}
+
 // Minimal HK
 void measure_hk(void) {
 #if HK_FLAGS & 1
-  hk_value[HK90_VBAT] = 3.217654321;  // Simulierte mV
+  hk_value[HK90_VBAT] = user_measure_battery();
 #endif
 #if HK_FLAGS & 2
-
-  hk_value[HK91_TEMP] = (float)25.123;  // Simulierte Temperatur
+  hk_value[HK91_TEMP] = user_measure_temperature();
 #endif
 #if HK_FLAGS & 8
   uint32_t h;
@@ -349,7 +410,12 @@ void hk_add_energy(uint32_t mAmSec) {
 }
 #endif
 
-// Typspezifisch messen -- Simulation--
+
+/*  -- Simulation-- Typspezifisch messen. 
+* Mehrere Moeglichkeiten, bei ival>0 immer HK Mitmessen
+* "Regulaere" Messung ival=0
+* Feeding the Watchdg required if takes >1 sec */
+
 int16_t measure(int16_t ival) {
   if (!mtimes.hk_dcnt || ival) {
     measure_hk();
@@ -360,11 +426,19 @@ int16_t measure(int16_t ival) {
   }
 
   // Simulierte Messung
-  channel_value[0].fe.errno = 0;
-  channel_value[0].fe.floatval = 1.12345;
+  int16_t bat16;
+  udrv_adc_read(UDRV_ADC_CHANNEL_VBAT, &bat16);
+  int16_t ref16;
+  udrv_adc_read(UDRV_ADC_CHANNEL_VREFINT, &ref16);
+
+  // Evtl. linearisieren, z.B. .floatval = (fval * param.koeff[x]) - param.koeff[x+1]
+  channel_value[0].fe.errno = 0;  // Im Fehlerfall Code
+  channel_value[0].fe.floatval = (float)bat16;
+  channel_value[0].unit = "(bat16)";  // Fuer Display
   channel_value[1].fe.errno = 0;
-  channel_value[1].fe.floatval = 2.23456;
-  anz_values = 2;  // global
+  channel_value[1].fe.floatval = (float)ref16;
+  channel_value[1].unit = "(ref16)";  // Fuer Display
+  anz_values = 2;                     // global
 
 #if (HK_FLAGS & 8)
   hk_add_energy(MESSEN_ENERGY);  // Energy fuer 1 Messung
@@ -571,11 +645,11 @@ void join_cb(int32_t status) {
 
 // Lora Callbacks -> SERVICE_LORA_RECEIVE_T https://docs.rakwireless.com/product-categories/software-apis-and-libraries/rui3/lorawan#service_lora_receive_t
 void recv_cb(SERVICE_LORA_RECEIVE_T *data) {
-  mtimes.flags = 0; // Beim Server angekommen
+  mtimes.flags = 0;  // Beim Server angekommen
   mlora_info.con.last_server_reply_runtime = now_runtime;
   uint8_t rlen = data->BufferSize;
   if (dbg_until_runtime > now_runtime) {
-    Serial.printf("Received %u Bytes received on Port %u\n", rlen, data->Port);
+    Serial.printf("Received %u Bytes on Port %u\n", rlen, data->Port);
     Serial.printf("RxDR:%u RSSI:%d SNR:%d DL-Counter:%u\n", data->RxDatarate, data->Rssi, data->Snr, data->DownLinkCounter);
 
     if (rlen) {
@@ -592,7 +666,7 @@ void recv_cb(SERVICE_LORA_RECEIVE_T *data) {
       Serial.print("'\n");
     }
   }
-  // Payload auswerten: 
+  // Payload auswerten:
   // LTX nur Port 10! Und ist ein String mit Space als Trenner ('p=600 cmd=Hallo')
   if (rlen && data->Port == 10) {
     data->Buffer[rlen] = 0;  // Terminate ASCII
@@ -658,12 +732,12 @@ int16_t lora_transfer(void) {
     Serial.printf("ERROR: Invalid fPort %d: set to 1\n", mlora_info.par.txport);
     mlora_info.par.txport = 1;
   }
+  if (dbg_until_runtime > now_runtime) {  // Show Payload
 
-  // Show Payload
-  Serial.printf("P[%u]:", mlora_info.par.txport);
-  for (uint16_t i = 0; i < paylen; i++) Serial.printf("%02X", mlora_info.par.txbytes[i]);
-  Serial.printf("\n");
-
+    Serial.printf("P[%u]:", mlora_info.par.txport);
+    for (uint16_t i = 0; i < paylen; i++) Serial.printf("%02X", mlora_info.par.txbytes[i]);
+    Serial.printf("\n");
+  }
   // Nothing heard from Server after 12h: Re-Join!
   int32_t last_contact_sec = now_runtime - mlora_info.con.last_server_reply_runtime;
   if ((last_contact_sec > 43200) || !api.lorawan.njs.get()) {
@@ -729,25 +803,30 @@ int16_t parse_ltx_cmd(char *pc) {
 
   if (!strcasecmp(pc, "initeu868")) {
     res = lora_setup(4);                // Band 4:868 MHz
+    show_credentials();
   } else if (str_cmatch("cred", pc)) {  // cred.. : Credentials and Setup
     show_credentials();
   } else if (str_cmatch("?", pc)) {  // ?: Reine Info-Fkt oder ?k Koeficients
     Serial.printf("Info:\n");
     Serial.printf("DEVICE_TYPE: %u\n", DEVICE_TYPE);
     update_runtime();
-    Serial.printf("Runtime: %d sec\n", now_runtime);
-    if (api.lorawan.njs.get()) {
-      uint8_t buff[4];
-      api.lorawan.daddr.get(buff, 4);
-      Serial.printf("Joined (DEVADDR: %02X%02X%02X%02X) %d sec ago\n", buff[0], buff[1], buff[2], buff[3], now_runtime - mlora_info.con.join_runtime);
-      Serial.printf("LastServerReply: ");
-      if (mlora_info.con.last_server_reply_runtime) {
-        Serial.printf("%d sec ago\n", now_runtime - mlora_info.con.last_server_reply_runtime);
-      } else Serial.printf("Never!\n");
-      Serial.printf("Datarate: %d\n", api.lorawan.dr.get());
-
+    if (!mlora_info.con.device_init) {
+      Serial.printf("Device not init!\n");
     } else {
-      Serial.printf("No Network!\n");
+      Serial.printf("Runtime: %d sec\n", now_runtime);
+      if (api.lorawan.njs.get()) {
+        uint8_t buff[4];
+        api.lorawan.daddr.get(buff, 4);
+        Serial.printf("Joined (DEVADDR: %02X%02X%02X%02X) %d sec ago\n", buff[0], buff[1], buff[2], buff[3], now_runtime - mlora_info.con.join_runtime);
+        Serial.printf("LastServerReply: ");
+        if (mlora_info.con.last_server_reply_runtime) {
+          Serial.printf("%d sec ago\n", now_runtime - mlora_info.con.last_server_reply_runtime);
+        } else Serial.printf("Never!\n");
+        Serial.printf("Datarate: %d\n", api.lorawan.dr.get());
+
+      } else {
+        Serial.printf("No Network!\n");
+      }
     }
     if (param._pmagic != _PMAGIC) {
       Serial.printf("ERROR: Parameter invalid\n");
@@ -830,9 +909,9 @@ int16_t parse_ltx_cmd(char *pc) {
           Serial.printf("koeff[%u]: %f\n", idx, nkf);
         }
       }
-    } else {  // Ohne was einfach nur zeigen
+    } else {  // Ohne was einfach nur Koeffs anzeigen mit Description
       for (uint16_t i = 0; i < ANZ_KOEFF; i++) {
-        Serial.printf("koeff[%u]: %f\n", i, param.koeff[i]);
+        Serial.printf("koeff[%u]: %f %s\n", i, param.koeff[i], koeff_desc[i]);
       }
     }
   } else if (str_cmatch("e", pc)) {            // e Messen
@@ -849,7 +928,7 @@ int16_t parse_ltx_cmd(char *pc) {
         } else {
           Serial.printf("Err%d ", pkv->fe.errno);  // Unbekannte als Zahl
         }
-        Serial.printf("\n");
+        Serial.printf(" %s\n", (pkv->unit) ? pkv->unit : "");  // Optional Unit dazu
         pkv++;
       }
       res = 0;
@@ -882,9 +961,9 @@ int16_t parse_ltx_cmd(char *pc) {
     if (res >= 0) {
       res = lora_transfer();
     }
-    mtimes.flags &= 0xF0;          // Manual loeschen
-  } else res = -2001;  // Command Unknown
-  return res;  // OK
+    mtimes.flags &= 0xF0;  // Manual loeschen
+  } else res = -2001;      // Command Unknown
+  return res;              // OK
 }
 
 
@@ -939,8 +1018,8 @@ void setup() {
 
   parameter_nvm_load();
   if (param.period < 10) param.period = 10;  // Min. 10 sec period
-  next_periodic_runtime = 30;                // Fruehestens nach 30 Sekunden 1. Messung
-  mtimes.flags = 128 + 2;                    // mtimes.flags: RESET Signalisieren und naechste UE vmtl. AUTOMATISCH
+  next_periodic_runtime = START_DELAY_SEC;   // Fruehestens nach xx Sekunden 1. Messung
+  mtimes.flags = 128;                        // mtimes.flags: RESET Signalisieren und naechste UE vmtl. AUTOMATISCH
 
   if (param.use_watchdog) {
     res = jo_wdt_init();
@@ -949,6 +1028,7 @@ void setup() {
 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);  // LED turn on when input pin value is LOW
+  analog_setup();               // Enable analog Routines
 
   if (!res) res = init_ltx_ats();
 
