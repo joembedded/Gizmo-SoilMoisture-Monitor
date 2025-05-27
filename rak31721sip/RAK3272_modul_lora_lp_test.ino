@@ -1,5 +1,4 @@
-/*
-RAK3272_SIP_Basis_WD_Timer - joembedded@gmail.com
+/* RAK3272_SIP_Basis_WD_Timer - joembedded@gmail.com
 
 Dieser Sketch implementiert einen kompletten LTX-Lora-Knoten auf einem RAK3172-E/T/L/SIP
 Dazu das entsprechende Board im Arduino Board-Manager eintragen.
@@ -202,9 +201,10 @@ float analog_read_average(uint32_t pin, uint16_t manz) {  // manz: >0!
   }
   return (float)temp32 / (float)manz;
 }
-/* Read internal Temperature, Recommended: manz 4-10
-* CPU comes with calibration Coeffs () (+/- 5°C!) */
-float analog_read_internal_temp(uint16_t manz) {
+/* Read internal Temperature for VCC = 3.3V , Recommended: manz 4-10
+* CPU comes with calibration Coeffs () (+/- 5°C!) 
+* Only valid if Module Voltage VCC is 3.3  Volt! */
+float analog_read_internal_temp_3V3(uint16_t manz) {
   float tempadf = analog_read_average(UDRV_ADC_CHANNEL_TEMPSENSOR, manz);
   int16_t tcal30 = *(uint16_t *)0x1FFF75A8;   // ca. 950 Ausm Datenblatt 3.18.1
   int16_t tcal130 = *(uint16_t *)0x1FFF75C8;  // ca. 1200
@@ -380,40 +380,49 @@ void user_setup(void){
   analog_setup();               // Enable analog Routines
   analog_read_single(ANAPIN);   // Force Port to Analog mode
 }
-float user_measure_battery(void) {
-  return api.system.bat.get();  // Auf RAK3172-SIP OK
-}
-float user_measure_temperature(void) {
-  return analog_read_internal_temp(10);  // 8 msec Auslagern
-}
 
 /* Simulierte Messung
 * Feeding the Watchdg required if takes >1 sec 
-* AD ist nicht allzu transparent, misst wohl auf VCC als Spanne
-* und hat Bandgap VREF als Kanal mit hinterlegtem Wert fuer 3V3..
+* AD misst VCC als Spanne und hat Bandgap VREF 
+* als Kanal mit hinterlegtem Wert fuer 3V3.
+* Zuerst wird user_measure_values() ausgeführt. 
+* Wenn da evtl. HK-Werte benoetigt werden, kann man diese gut cachen.
 */
-int16_t user_measure(int16_t ival){
+float modvcc; // Module's VCC
+int16_t user_measure_values(int16_t ival){
+  uint16_t rcali3v3 = *(uint16_t*)0x1FFF75AA; // Factory calibrated at 3V3, ca. 1500
+  modvcc = 3.30/(float)analog_read_single(UDRV_ADC_CHANNEL_VREFINT)*(float)rcali3v3;
+  
   // Evtl. linearisieren, z.B. .floatval = (fval * param.koeff[x]) - param.koeff[x+1]
   channel_value[0].fe.errno = 0;  // Im Fehlerfall Code
-  channel_value[0].fe.floatval = analog_read_average(ANAPIN,100) / 4096.0 * 3300 ; // in mV
-  channel_value[0].unit = "(anaPB4)";  // Fuer Display
+  channel_value[0].fe.floatval = analog_read_average(ANAPIN,100) * modvcc / 4096.0; // Scale to V
+  channel_value[0].unit = "V_PB4";  // Fuer Display
   channel_value[1].fe.errno = 0;
-  uint16_t refval3v3 = *(uint16_t*)0x1FFF75AA; // VREFINT_CAL at 3V3
-  Serial.printf("Ref: %u\n",refval3v3);
-  channel_value[1].fe.floatval = (float)analog_read_single(UDRV_ADC_CHANNEL_VREFINT); 
-  channel_value[1].unit = "(vref)";  // Fuer Display
+  
+  channel_value[1].fe.floatval = (float)analog_read_single(UDRV_ADC_CHANNEL_TEMPSENSOR);
+  channel_value[1].unit = "(testtemp)";  // Fuer Display
+  channel_value[1].fe.errno = 123;
+  
   anz_values = 2;                     // global
   return 0; // OK - keine Uebertragung wenn <0
 }
+// HK wird ggfs. im 2. Step gemessen
+float user_measure_hk_battery(void) {
+  return modvcc; // use cached value
+}
+float user_measure_hk_temperature(void) {
+  return analog_read_internal_temp(10);  // 8 msec Auslagern
+}
+
 // Ende User-Routinen
 
 // Minimal HK
 void measure_hk(void) {
 #if HK_FLAGS & 1
-  hk_value[HK90_VBAT] = user_measure_battery();
+  hk_value[HK90_VBAT] = user_measure_hk_battery();
 #endif
 #if HK_FLAGS & 2
-  hk_value[HK91_TEMP] = user_measure_temperature();
+  hk_value[HK91_TEMP] = user_measure_hk_temperature();
 #endif
 #if HK_FLAGS & 8
   uint32_t h;
@@ -445,7 +454,7 @@ void hk_add_energy(uint32_t mAmSec) {
 
 int16_t measure(int16_t ival) {
   // First User Measure
-  int16_t ures = user_measure(ival);
+  int16_t ures = user_measure_values(ival);
   // Optionally HK
   if (!mtimes.hk_dcnt || ival) {
     mtimes.hk_dcnt = param.hk_reload;
@@ -810,7 +819,19 @@ int16_t show_credentials(void) {
   return bsum;
 }
 
-
+// Deliver a format string
+const char* getLTXErrorfmt(uint16_t errno) {
+    switch (errno) {
+        case 1: return "NoValue";
+        case 2: return "NoReply";
+        case 3: return "OldValue";
+        // 4,5 unused
+        case 6: return "ErrorCRC";
+        case 7: return "DataError";
+        case 8: return "NoCachedValue";
+        default: return "Err%u"; 
+    }
+}
 // Kommando-Handler nimmt nur Strings, Ret: 0: OK. Ohne WS!
 int16_t parse_ltx_cmd(char *pc) {
   int16_t res = 0;  // Assume OK
@@ -847,11 +868,11 @@ int16_t parse_ltx_cmd(char *pc) {
     if (param._pmagic != _PMAGIC) {
       Serial.printf("ERROR: Parameter invalid\n");
     } else {
-      Serial.printf("Cmd: '%s'\n", param.messcmd);
-      Serial.printf("Period: %u sec\n", param.period);
-      Serial.printf("HK-Reload: %u\n", param.hk_reload);
-      Serial.printf("Profile: %u\n", param.sensor_profile);
-      Serial.printf("Use Watchdog: %u\n", param.use_watchdog);
+      Serial.printf("Cmd('cmd='): '%s'\n", param.messcmd);
+      Serial.printf("Period('=p'): %u sec\n", param.period);
+      Serial.printf("HK-Reload('hkr='): %u\n", param.hk_reload);
+      Serial.printf("Profile('profile='): %u\n", param.sensor_profile);
+      Serial.printf("Use Watchdog('wd='): %u\n", param.use_watchdog);
 
       if (param_dirty) Serial.printf("INFO: Parameter not saved!\n");
     }
@@ -895,8 +916,8 @@ int16_t parse_ltx_cmd(char *pc) {
       if (api.system.timer.stop(RAK_TIMER_0) != true) res = -2005;                                     // Timer0 Faile1b
       else if (api.system.timer.start(RAK_TIMER_0, (int_sec * 1000), (void *)0) != true) res = -2006;  // Timer0 Fail2b
     }
-  } else if (str_cmatch("hk=", pc)) {
-    uint32_t nhk = atoi(pc + 3);
+  } else if (str_cmatch("hkr=", pc)) {
+    uint32_t nhk = atoi(pc + 4);
     if (nhk < 0) nhk = 0;  // Reload
     param.hk_reload = nhk;
     mtimes.hk_dcnt = 0;
@@ -942,9 +963,9 @@ int16_t parse_ltx_cmd(char *pc) {
         if (pkv->fe.errno == NO_ERROR) {
           Serial.printf("%f ", pkv->fe.floatval);
         } else {
-          Serial.printf("Err%d ", pkv->fe.errno);  // Unbekannte als Zahl
+          Serial.printf(getLTXErrorfmt(pkv->fe.errno), pkv->fe.errno);  // Unbekannte als Zahl, Bekannt als Text
         }
-        Serial.printf(" %s\n", (pkv->unit) ? pkv->unit : "");  // Optional Unit dazu
+        Serial.printf("%s\n", (pkv->unit) ? pkv->unit : "");  // Optional Unit dazu
         pkv++;
       }
       res = 0;
