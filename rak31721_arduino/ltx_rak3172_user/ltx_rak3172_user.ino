@@ -1,0 +1,102 @@
+/**
+ * @file ltx_rak3172_user.ino
+ * @brief LoRaWAN Sensor Firmware for RAK3172 modules using LTX Payload System.
+ * @version 1.00
+ * @author JoEmbedded.de
+ *
+ * This firmware implements a complete LTX LoRa node on a RAK3172-E/T/L/SIP module.
+ * It uses the LTX payload system for efficient uplink and downlink data transfer,
+ * supporting F32 and F16 formats, error codes, and housekeeping (HK) data such as
+ * battery voltage and consumed energy.
+ *
+ * @details
+ * - Uplink and downlink routines for minimal overhead data transfer.
+ * - LTX payload decoder available for ChirpStack, TTN, and other platforms.
+ * - Housekeeping data (e.g., battery voltage) can be transmitted occasionally.
+ * - Supports configuration via AT commands and Arduino IDE.
+ * - Watchdog usage is recommended for low power consumption (~7µA).
+ * - Extremely low power mode (<3µA) possible by disabling the watchdog.
+ * - Parameters can be set via command string on LoRaWAN fPort10.
+ *
+ * @links
+ * - LTX Payload Decoder: https://github.com/joembedded/payload-decoder
+ * - RUI3 Documentation: https://docs.rakwireless.com/product-categories/software-apis-and-libraries/rui3/arduino-api
+ *
+ * @usage
+ * 1. Flash latest RAK firmware to the RAK3172 module.
+ * 2. Reset board and verify DEVEUI.
+ * 3. Select correct board in Arduino IDE.
+ * 4. Edit and upload user sketch.
+ * 5. Configure parameters via AT commands.
+ * 6. Initialize board and credentials.
+ * 7. Board transmits automatically after power-on.
+ * 8. Parameters can be sent as command strings via fPort10.
+ *
+ * @note
+ * - The software runs in a timer interval of 30 seconds (with watchdog) or 120 seconds (without watchdog).
+ * - Multiple commands per string are possible, separated by spaces.
+ *
+ * @section User Functions
+ * - user_setup(): Initializes analog routines and configures analog pins.
+ * - user_measure_values(): Simulates measurement, reads analog values, scales, and sets error codes.
+ * - user_measure_hk_battery(): Returns cached module VCC value.
+ * - user_measure_hk_temperature(): Measures internal temperature (valid if VCC = 3.3V).
+ */
+
+#include "ltx_rak3172_user.h" // Specific User Setup for this Device
+#include "ltx_globaldefs.h" // LTX common
+
+/* Watchdog is recommended. If disabled: interval max. 120 sec, otherwise max. 30 sec */
+PARAM param = { _PMAGIC, "", 3600, 6, 1, /*WD*/ true, { 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0 } };
+const char *koeff_desc[ANZ_KOEFF] = {
+  "Multiplier Channel #0", "Offset Channel #0",
+  "Multiplier Channel #1", "Offset Channel #1",
+  "unused", "unused",
+  "unused", "unused"
+};
+
+// User routines - Setup/Measure
+#define ANAPIN1 PB4 // - on SIP-Eval at the back! Init as Output!
+#define ANAPIN2 PB3 // 
+void user_setup(void){
+  analog_setup();               // Enable analog routines
+  analog_read_single(ANAPIN1);   // Force Port2 to Analog mode
+  analog_read_single(ANAPIN2); 
+}
+
+/* Simulated measurement
+* Feeding the watchdog required if takes >1 sec 
+* ADC measures VCC as reference and has bandgap VREF 
+* as channel with stored value for 3V3.
+* First, user_measure_values() is executed. 
+* If HK values are needed, they can be cached here.
+*/
+float modvcc; // Module's VCC
+int16_t user_measure_values(int16_t ival){
+  uint16_t rcali3v3 = *(uint16_t*)0x1FFF75AA; // Factory calibrated at 3V3, approx. 1500
+  modvcc = 3.30/(float)analog_read_single(UDRV_ADC_CHANNEL_VREFINT)*(float)rcali3v3;
+  
+  // Optionally linearize, e.g. .floatval = (fval * param.koeff[x]) - param.koeff[x+1]
+  channel_value[0].fe.errno = 0;  // Error code if needed
+  channel_value[0].fe.floatval = analog_read_average(ANAPIN1,100) * modvcc / 4096.0; // Scale to V
+  channel_value[0].unit = "V_PB4";  // For display
+  channel_value[1].fe.errno = 0;
+  
+  int16_t ap2 = analog_read_single(ANAPIN2);
+  channel_value[1].fe.floatval = (float)ap2;
+  channel_value[1].unit = "(Cnt_PB3)"; 
+  channel_value[1].fe.errno = (ap2>2000)?0:7; // If ap2<=2000: Error "NoData" on this channel
+  
+  anz_values = 2;                     // global variable
+  
+  return 0; // OK - no transmission if <0
+}
+// HK is measured in the 2nd step if needed
+float user_measure_hk_battery(void) {
+  return modvcc; // use cached value
+}
+float user_measure_hk_temperature(void) {
+  return analog_read_internal_temp_3V3(10);  // 8 msec, Temp only if VCC = 3.3V
+}
+// End of user routines
+
