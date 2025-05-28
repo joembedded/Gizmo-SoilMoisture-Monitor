@@ -1,5 +1,24 @@
 // LTX_GLOBALDEFS.H - Common Headers for LTX
 
+/* Energy:
+ *
+ * RAK3172L-SIP - ARDUINO-SW
+ * Join: 90 mC (DR0)
+ * 1 Byte Upload DR0 55 mC 
+ * 48 Bytes Upload DR0 125 mC
+ * => 1.490 mC/Byte + 53.511 mC(Fix)
+ * RAK3172(Modul) - ARDUINO-SW
+ * Join: 160 mC (DR0)
+ * 1 Byte Upload DR0 120mC
+ * 48 Bytes Upload DR0 280 mC
+ * => 3.404 mC/Byte + 116.596mC(Fix)
+ *
+ * Info: 1 mAh = 3600 mC = 3600.000 uC
+ * Payload 10 Bytes on L-SIP: ca. 80 mC => ca. 45 Transmissions per 1 mAh => 1500 mAh Battery allows 67500 Transmissions
+ * Payload 10 Bytes on Module: ca. 150 mC => ca. 24 Transmissions per 1 mAh => 1500 mAh Battery allows 36000 Transmissions
+ */
+#define PACKET_ENERGY   ((TX_PER_BYTE_ENERGY * mlora_info.par.txanz) / (api.lorawan.dr.get() * 6 + 1))
+
 // Definitions
 #define MAX_MESSCMD 79
 #define _PMAGIC (0xCAFFEBA0 + DEVICE_TYPE * ANZ_KOEFF) // Magic for valid parameters

@@ -395,9 +395,10 @@ int16_t lora_setup(uint8_t band) {
     res = -2101;            // 4:868 MHz, ..
   api.lorawan.njm.set(1);   // 1: OTAA
   api.lorawan.rety.set(0);  // No RX confirmation repeat
-  api.lorawan.cfm.set(1);   // But confirm TX
   api.lorawan.dr.set(0);    // In case still > 0 from before
-  api.lorawan.adr.set(AUTO_DATARATE_REDUCTION);   // !!!1:Automatic Data Reduction On, not useful for moving devices!!!
+
+  api.lorawan.cfm.set(LORA_CONFIRM_MODE);   // But confirm TX
+  api.lorawan.adr.set(LORA_AUTO_DATARATE_REDUCTION);   // !!!1:Automatic Data Reduction On, not useful for moving devices!!!
   return res;
 }
 
@@ -494,16 +495,7 @@ uint8_t *measure_payoff_mess(uint8_t *pu, uint8_t payload_flags) {
   return pu;
 }
 
-/******* Lora-Transfer and Service ****************
- * Measured for standard module with 3V3
- * Energy:
- * 1 Bytes DR0  140mC
- * 48 Bytes DR0  285mC
- * 48 Bytes DR5  15mC
- * Join: 180mC
- * approx. 3mC/Byte in DR 0, approx. 0.16 in DR5 - roughly balanced
- * energy += (paylen) + 90) * 1500) / (data_rate * 3 + 1);
- */
+/******* Lora-Transfer and Service ****************/
 
 // Before the callbacks
 extern int16_t parse_ltx_cmd(char *pc);
@@ -534,7 +526,7 @@ int16_t send_txpayload(void) {
     return -2011;
   }
   if (!api.lorawan.send(mlora_info.par.txanz, mlora_info.par.txbytes, mlora_info.par.txport)) {
-    Serial.println("ERROR: Send failed");  // Bool
+    Serial.println("ERROR: Send failed");  // Bool - e.g. because of Duty Cycle lmitations
     return -2010;
   }
   return 0;
@@ -548,7 +540,7 @@ void join_cb(int32_t status) {
     send_txpayload();  // Should be there
     mlora_info.con.join_runtime = now_runtime;
 #if HK_FLAGS & 8
-    hk_add_energy(((mlora_info.par.txanz + PER_BYTE_ENERGY) * 1500) / (api.lorawan.dr.get() * 3 + 1));  // PACKET ENERGY
+    hk_add_energy(PACKET_ENERGY); 
 #endif
   } else {
     Serial.printf("ERROR: %d, Join failed\n", status);
@@ -638,10 +630,12 @@ void timereq_cb(int32_t status) {
 */
 // ---CB End
 
+
 int16_t lora_transfer(void) {
   uint8_t *phu = measure_payoff_lorahdr();
   phu = measure_payoff_mess(phu, mtimes.hk_valid ? PLWITH_ALL : PLWITH_VALUES);
   int16_t paylen = (phu - mlora_info.par.txbytes);
+
   Serial.printf("LoRa-Transfer%s (%d Bytes)\n", mtimes.hk_valid ? " with HK" : "", paylen);
   if (paylen > MAX_PAYBUF_ANZ) {
     Serial.printf("ERROR: Payload too large, clipped to %u Bytes\n", MAX_PAYBUF_ANZ);
@@ -672,7 +666,7 @@ int16_t lora_transfer(void) {
   } else {
     send_txpayload();
 #if HK_FLAGS & 8
-    hk_add_energy(((mlora_info.par.txanz + PER_BYTE_ENERGY) * 1500) / (api.lorawan.dr.get() * 3 + 1));  // PACKET ENERGY
+    hk_add_energy(PACKET_ENERGY); 
 #endif
   }
   return 0;
