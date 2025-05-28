@@ -6,6 +6,7 @@
 #define ANZ_KOEFF 8                   // Number of coefficients for this application
 #define MAX_CHANNELS 4                // Maximum number of channels. For F16: 20 channels occupy 2+40 bytes payload plus optionally 1+3 bytes per HK channel
 #define START_DELAY_SEC 30            // Start LoRaWAN after x seconds after PowerOn
+#define AUTO_DATARATE_REDUCTION 0     // 1:Init with ADR enabled (fix device), 0:Init with ADR disabled(movin device)
 #define USER_CREDENTIAL_SEED    (get_mac_l())  // Dynamic/Random or Static, Macro to initialize credentials generation
 
 // 3V3: LTX calculates the consumed energy in mAH. This is for a RAK3172 module without stepper. RAK3172L requires less.
