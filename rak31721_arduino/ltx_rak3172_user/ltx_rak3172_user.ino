@@ -47,7 +47,7 @@
 #include "ltx_globaldefs.h"    // LTX common
 
 /* Watchdog is recommended. If disabled: interval max. 120 sec, otherwise max. 30 sec */
-PARAM param = { _PMAGIC, "", 3600, 5, 1, /*WD*/ true, { 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0 } };
+PARAM param = { _PMAGIC, "_measue_command_", 3600, 5, 1, /*WD*/ true, { 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0 } };
 const char *koeff_desc[ANZ_KOEFF] = {
   "Multiplier Channel #0", "Offset Channel #0",
   "Multiplier Channel #1", "Offset Channel #1",
@@ -67,8 +67,9 @@ void user_setup(void) {
 * Feeding the watchdog required if takes >1 sec 
 * ADC measures VCC as reference and has bandgap VREF 
 * as channel with stored value for 3V3.
-* First, user_measure_values() is executed. 
+* First, 'user_measure_values()' is executed. 
 * If HK values are needed, they can be cached here.
+* The string 'param.cmd' may be used as measurment command.
 */
 float modvcc;             // Module's VCC
 uint32_t user_count = 1;  // Simply increment
