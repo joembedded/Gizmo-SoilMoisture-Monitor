@@ -16,9 +16,9 @@
 
 // 3V3: LTX calculates the consumed energy in mAH. Values for RAK3172L-SIP:
 #define MESSEN_ENERGY 1000  // uC - Assume 10mA for 100 msec (= 1 mC)
-#define JOIN_ENERGY 100000  // uC For 3172-L at 3V3 @ DR0
-#define TX_PER_BYTE_ENERGY 1490  // uC/Byte For 3172-L at 3V3 @ DR0
-#define TX_FIX_ENERGY 53511  // uC For 3172-L at 3V3 @ DR0
+// Define used LoRa-Energy scheme (see ltx_globaldefs.h):
+//#define STD_ENERGY_RAK3172LSIP_3V3 
+#define STD_ENERGY_RAK3172MODULE_3V3 
 
 // This is PIN for State-LED
 #define LED_PIN PA4  // Standard LED vs. VCC

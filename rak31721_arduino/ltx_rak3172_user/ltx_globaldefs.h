@@ -18,31 +18,42 @@
  * Payload 10 Bytes on Module @ DR0: ca. 150 mC => ca. 24 Transmissions per 1 mAh => 1500 mAh Battery allows 36000 Transmissions
  * => If possible (for fixed Devices) enable ADR (Auto Data Rate Reduction). 
  */
-#define PACKET_ENERGY   (((TX_PER_BYTE_ENERGY * mlora_info.par.txanz) + TX_FIX_ENERGY)/ (api.lorawan.dr.get() * 6 + 1))
+#ifdef STD_ENERGY_RAK3172LSIP_3V3 // LowPower L-SIP
+#define JOIN_ENERGY 100000       // uC For 3172-L at 3V3 @ DR0
+#define TX_PER_BYTE_ENERGY 1490  // uC/Byte For 3172-L at 3V3 @ DR0
+#define TX_FIX_ENERGY 53511      // uC For 3172-L at 3V3 @ DR0
+#endif
+
+#ifdef STD_ENERGY_RAK3172MODULE_3V3 // NormalPower Module, Eval:-T/-SIP
+#define JOIN_ENERGY 160000       // uC For 3172-E/T at 3V3 @ DR0
+#define TX_PER_BYTE_ENERGY 3404  // uC/Byte For 3172-E/T at 3V3 @ DR0
+#define TX_FIX_ENERGY 116596     // uC For 3172-E/T at 3V3 @ DR0
+#endif
+
+#define PACKET_ENERGY (((TX_PER_BYTE_ENERGY * mlora_info.par.txanz) + TX_FIX_ENERGY) / (api.lorawan.dr.get() * 6 + 1))
 
 
 // Definitions
 #define MAX_MESSCMD 79
-#define _PMAGIC (0xCAFFEBA0 + DEVICE_TYPE * ANZ_KOEFF) // Magic for valid parameters
+#define _PMAGIC (0xCAFFEBA0 + DEVICE_TYPE * ANZ_KOEFF)  // Magic for valid parameters
 typedef struct
 {
   uint32_t _pmagic;
-  char messcmd[MAX_MESSCMD + 1]; // Defines the measurement command 'cmd'
-  uint32_t period;               // (60..3599), 3600, xxx sec 'p'
-  uint16_t hk_reload;            // If >=1: transmit with housekeeping 'hkr'
+  char messcmd[MAX_MESSCMD + 1];  // Defines the measurement command 'cmd'
+  uint32_t period;                // (60..3599), 3600, xxx sec 'p'
+  uint16_t hk_reload;             // If >=1: transmit with housekeeping 'hkr'
   // If >= 1 (-199) LoRaPort, upper 1000 included for ASL 1:F16, 0:F32
   // e.g. 11: rh/T(F32) or 1011(F16)
-  uint16_t sensor_profile; // 'profile'
-  bool use_watchdog;       // 'wd'
+  uint16_t sensor_profile;  // 'profile'
+  bool use_watchdog;        // 'wd'
 
   // End: Coefficients [MUL, OFFSET, MUL, OFFSET, ..]
   float koeff[ANZ_KOEFF];
 } PARAM;
-extern PARAM param;                       // Supplied by User
-extern const char *koeff_desc[ANZ_KOEFF]; // Description for the coefficients - Supplied by user
+extern PARAM param;                        // Supplied by User
+extern const char *koeff_desc[ANZ_KOEFF];  // Description for the coefficients - Supplied by user
 
-typedef union
-{ // Conversion FLOAT->Binary
+typedef union {  // Conversion FLOAT->Binary
   uint32_t ulval;
   float fval;
 } FXVAL;
@@ -51,19 +62,19 @@ typedef union
 // Representation of a general floating point number with optional error:
 typedef struct
 {
-  uint16_t errno; // errno 0: No ERROR (1-1023 asl error code usable)
-  float floatval; // Value only relevant if errno 0, otherwise ignored
+  uint16_t errno;  // errno 0: No ERROR (1-1023 asl error code usable)
+  float floatval;  // Value only relevant if errno 0, otherwise ignored
 } FE_ZAHL;
 
 typedef struct
 {
-  FE_ZAHL fe; // The measured value
+  FE_ZAHL fe;  // The measured value
   // Optional space for meta-data, e.g. type-specific units
-  const char *unit; // For "e": unit for display or NULL
+  const char *unit;  // For "e": unit for display or NULL
 } CHANNEL_VALUE;
 
 extern CHANNEL_VALUE channel_value[MAX_CHANNELS];
-extern uint16_t anz_values; // Number of measured values
+extern uint16_t anz_values;  // Number of measured values
 
 // User Interface
 extern void user_setup(void);
