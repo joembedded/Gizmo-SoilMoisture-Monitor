@@ -99,7 +99,9 @@ void update_runtime(void) {
 bool wdt_in_use;  // True if used/enabled
 
 #define WDT_TIMER_PERIOD_SEC 30  // for auto_feed Max. up to TIMER_PERIOD 30
-#define ENERGY_WDT 100           // Avg. 10 mA for 10 msec, gives approx. 3.5uAh if on
+
+#define ENERGY_PERIODIC_WDT 190    // Avg. 10 mA for 10 msec + 3uA * 30 sec
+#define ENERGY_PERIODIC_NOWDT 420  // Avg. 8 mA for 8 msec +3uA * 120 sec
 
 #define IWDG_WINDOW 0xFFF  // Feeding too fast triggers WDT-Window!
 #define IWDG_RELOAD 0xFFF
@@ -188,7 +190,7 @@ void apptimer_timer_handler(void *data) {
         Serial.printf(" - Next Transfer Slot in %d sec\n", delta2next);
     }
 #if (HK_FLAGS & 8)
-    hk_add_energy(ENERGY_WDT);  // Energy for 1 Watchdog
+    hk_add_energy(wdt_in_use ? ENERGY_PERIODIC_WDT : ENERGY_PERIODIC_NOWDT);  // Energy for 1 Tick
 #endif
   } else {
     Serial.printf("[PERIODIC] - Auto Transfer...\n");
@@ -397,8 +399,8 @@ int16_t lora_setup(uint8_t band) {
   api.lorawan.rety.set(0);  // No RX confirmation repeat
   api.lorawan.dr.set(0);    // In case still > 0 from before
 
-  api.lorawan.cfm.set(LORA_CONFIRM_MODE);   // But confirm TX
-  api.lorawan.adr.set(LORA_AUTO_DATARATE_REDUCTION);   // !!!1:Automatic Data Reduction On, not useful for moving devices!!!
+  api.lorawan.cfm.set(LORA_CONFIRM_MODE);             // But confirm TX
+  api.lorawan.adr.set(LORA_AUTO_DATARATE_REDUCTION);  // !!!1:Automatic Data Reduction On, not useful for moving devices!!!
   return res;
 }
 
@@ -540,7 +542,7 @@ void join_cb(int32_t status) {
     send_txpayload();  // Should be there
     mlora_info.con.join_runtime = now_runtime;
 #if HK_FLAGS & 8
-    hk_add_energy(PACKET_ENERGY); 
+    hk_add_energy(PACKET_ENERGY);
 #endif
   } else {
     Serial.printf("ERROR: %d, Join failed\n", status);
@@ -666,7 +668,7 @@ int16_t lora_transfer(void) {
   } else {
     send_txpayload();
 #if HK_FLAGS & 8
-    hk_add_energy(PACKET_ENERGY); 
+    hk_add_energy(PACKET_ENERGY);
 #endif
   }
   return 0;

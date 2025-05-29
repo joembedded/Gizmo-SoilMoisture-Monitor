@@ -14,10 +14,12 @@
  * => 3.404 mC/Byte + 116.596mC(Fix)
  *
  * Info: 1 mAh = 3600 mC = 3600.000 uC
- * Payload 10 Bytes on L-SIP: ca. 80 mC => ca. 45 Transmissions per 1 mAh => 1500 mAh Battery allows 67500 Transmissions
- * Payload 10 Bytes on Module: ca. 150 mC => ca. 24 Transmissions per 1 mAh => 1500 mAh Battery allows 36000 Transmissions
+ * Payload 10 Bytes on L-SIP @ DR0: ca. 80 mC => ca. 45 Transmissions per 1 mAh => 1500 mAh Battery allows 67500 Transmissions
+ * Payload 10 Bytes on Module @ DR0: ca. 150 mC => ca. 24 Transmissions per 1 mAh => 1500 mAh Battery allows 36000 Transmissions
+ * => If possible (for fixed Devices) enable ADR (Auto Data Rate Reduction). 
  */
-#define PACKET_ENERGY   ((TX_PER_BYTE_ENERGY * mlora_info.par.txanz) / (api.lorawan.dr.get() * 6 + 1))
+#define PACKET_ENERGY   (((TX_PER_BYTE_ENERGY * mlora_info.par.txanz) + TX_FIX_ENERGY)/ (api.lorawan.dr.get() * 6 + 1))
+
 
 // Definitions
 #define MAX_MESSCMD 79
