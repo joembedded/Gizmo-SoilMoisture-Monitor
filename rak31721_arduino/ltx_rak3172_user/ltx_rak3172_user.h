@@ -5,14 +5,14 @@
 #define HK_FLAGS 11               // HK values 1:BatVolt 2:Temp (4:Humidity) 8:Energy (16:Barometer)
 #define ANZ_KOEFF 8               // Number of coefficients for this application
 #define MAX_CHANNELS 4            // Maximum number of channels. For F16: 20 channels occupy 2+40 bytes payload plus optionally 1+3 bytes per HK channel
-#define START_DELAY_SEC 30        // Start LoRaWAN after x seconds after PowerOn
+#define START_DELAY_SEC 30        // Start LoRaWAN after x seconds after PowerOn (Use >= 30 sec)
 
 // Good combi: Both 1 or both 0: (1:Server periodically automatically adjusts DR with ADR set, else 0:use always maximum energy)
 // May be changed manually with AT-commands
 #define LORA_AUTO_DATARATE_REDUCTION 0  // 1:Init with ADR enabled (fix device), 0:Init with ADR disabled(movin device)
 #define LORA_CONFIRM_MODE 0             // 1:Confirm TX, 0:Send unconfirmed
 
-#define USER_CREDENTIAL_SEED (get_mac_l())  // Dynamic/Random or Static, Macro to initialize credentials generation
+#define USER_CREDENTIAL_SEED (get_mac_l())  // Dynamic/Random or Static, Macro to initialize (indiviodual) credentials generation
 
 // 3V3: LTX calculates the consumed energy in mAH. Values for RAK3172L-SIP:
 #define MESSEN_ENERGY 1000  // uC - Assume 10mA for 100 msec (= 1 mC)

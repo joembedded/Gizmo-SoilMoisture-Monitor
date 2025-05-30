@@ -3,7 +3,12 @@
  * @brief LoRaWAN Sensor background routines
  * @version 1.00
  * @author JoEmbedded.de
- */
+
+* The LED:
+* Power-On: System flashes 8 Times (short Pulse)
+* After START_DELAY_SEC: Network is joined: if successful: Blink 8 Times 50/50
+* Normal operation: Flash LED very short each wakeup (30-120 sec)
+*/
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -162,6 +167,42 @@ float analog_read_internal_temp_3V3(uint16_t manz) {
 }
 // Analog-End
 
+// Blinker
+#define BLINK_MAX 10
+static uint16_t ablink_cnt;
+static uint16_t blink_level;
+static uint16_t blink_running;
+void apptimer_blink_handler(void *data) {
+  if (!ablink_cnt) {
+    if (!blink_running) {
+      api.system.timer.stop(RAK_TIMER_1);
+      return;
+    }
+    blink_running--;
+    ablink_cnt = BLINK_MAX;
+    digitalWrite(LED_PIN, LOW);  // LED on
+  } else {
+    if (ablink_cnt == blink_level) digitalWrite(LED_PIN, HIGH);  // LED off
+    ablink_cnt--;
+  }
+}
+// Set,start blink timer at 8Hz, val= 0..8, if !running: run_cnt
+// 1: Long ON - 5: 50% - 10: Short ON, each run: 1.25 sec
+void blink_timer_setvalrun(uint16_t val, uint16_t runs) {
+  blink_level = val;
+  if (!blink_running) {
+    ablink_cnt = 0;
+    blink_running = runs;
+    api.system.timer.start(RAK_TIMER_1, 125 /*msec*/, (void *)0);  // Not system relevant
+  }
+}
+int16_t blink_init(void) {
+  if (api.system.timer.create(RAK_TIMER_1, (RAK_TIMER_HANDLER)apptimer_blink_handler, RAK_TIMER_PERIODIC) != true)
+    return -1003;  // Timer1 Fail1
+  return 0;        // OK
+}
+
+
 /* Context of the handler is "normal"
  * Note: the timer has a frame of 9msec @ approx. 10mA msec and itself, average thus approx. 3->7uA
  * if called only every 10 sec, the current consumption increases to avg. 15uA!
@@ -171,9 +212,7 @@ float analog_read_internal_temp_3V3(uint16_t manz) {
 int16_t measure(int16_t ival);  // Forward Decl.
 int16_t lora_transfer(void);    // Forward Decl.
 void apptimer_timer_handler(void *data) {
-
   digitalWrite(LED_PIN, LOW);  // LED ON
-
   if (wdt_in_use)
     jo_wdt_feed();  // Verified: WD triggers cleanly 32 sec after last feed
   update_runtime();
@@ -527,7 +566,14 @@ int16_t send_txpayload(void) {
     Serial.println("ERROR: Nothing to send");
     return -2011;
   }
-  if (!api.lorawan.send(mlora_info.par.txanz, mlora_info.par.txbytes, mlora_info.par.txport)) {
+  bool sres;
+  int32_t last_contact_sec = now_runtime - mlora_info.con.last_server_reply_runtime;
+  if (last_contact_sec >= 21600) {  // >6h always request confirmation
+    sres = api.lorawan.send(mlora_info.par.txanz, mlora_info.par.txbytes, mlora_info.par.txport, true);
+  } else {
+    sres = api.lorawan.send(mlora_info.par.txanz, mlora_info.par.txbytes, mlora_info.par.txport);
+  }
+  if (!sres) {
     Serial.println("ERROR: Send failed");  // Bool - e.g. because of Duty Cycle lmitations
     return -2010;
   }
@@ -539,7 +585,8 @@ void join_cb(int32_t status) {
   if (status == RAK_LORAMAC_STATUS_OK) {
     rejoins = 0;
     Serial.println("Network joined");
-    send_txpayload();  // Should be there
+    blink_timer_setvalrun(5, 8);  // 8 times 50% blink
+    send_txpayload();             // Should be there
     mlora_info.con.join_runtime = now_runtime;
 #if HK_FLAGS & 8
     hk_add_energy(PACKET_ENERGY);
@@ -658,9 +705,13 @@ int16_t lora_transfer(void) {
   }
   // Nothing heard from Server after 12h: Re-Join!
   int32_t last_contact_sec = now_runtime - mlora_info.con.last_server_reply_runtime;
-  if ((last_contact_sec > 43200) || !api.lorawan.njs.get()) {
-    Serial.printf("Join Network...\n");
-    rejoins = 3;  // 1+3 attempts
+
+  int32_t last_contact_limit = 43200;                              // Each 12h reply expected
+  if (param.period > 7200) last_contact_limit = param.period * 6;  //or more
+
+  if ((last_contact_sec > last_contact_limit) || !api.lorawan.njs.get()) {
+    Serial.printf("Join Network...\n");  // Join or Rejoin
+    rejoins = 3;                         // 1+3 attempts
     api.lorawan.join();
 #if HK_FLAGS & 8
     hk_add_energy(JOIN_ENERGY);
@@ -1000,6 +1051,9 @@ void setup() {
       res = -1002;  // Timer0 Fail2
     Serial.printf("Period: Transfer/Wakeup: %u/%u sec\n", param.period, int_sec);
   }
+
+  if (!res) res = blink_init();  // A timer for LED Signals
+
   show_credentials();
 
   api.lorawan.registerJoinCallback(join_cb);
@@ -1012,7 +1066,8 @@ void setup() {
   */
 
   // 0: OK
-  digitalWrite(LED_PIN, HIGH);  // LED turn on when input pin value is LOW
+  blink_timer_setvalrun(10, 8);  // 8 times short blink
+
   if (res) {
     Serial.printf("ERROR: setup():%d, Reset...\n", res);
     delay(10000);
