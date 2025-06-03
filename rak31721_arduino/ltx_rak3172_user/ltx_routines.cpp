@@ -1,7 +1,7 @@
 /*
  * @file ltx_routines.cpp
  * @brief LoRaWAN Sensor background routines
- * @version 1.00
+ * @version 1.01
  * @author JoEmbedded.de
 
 * The LED:
@@ -44,6 +44,7 @@ typedef struct
   } con;
   struct
   {                                        // Set parameters
+    bool tx_with_conf;                   // If true override CFM
     uint8_t txanz;                         // Message to send if >0
     uint8_t txport;                        // Port to send, 1-223 allowed
     uint8_t txbytes[MAX_PAYBUF_ANZ + 32];  // Always binary, but technical reserve
@@ -190,10 +191,12 @@ void apptimer_blink_handler(void *data) {
 // 1: Long ON - 5: 50% - 10: Short ON, each run: 1.25 sec
 void blink_timer_setvalrun(uint16_t val, uint16_t runs) {
   blink_level = val;
-  if (!blink_running) {
+  if (runs && !blink_running) {
     ablink_cnt = 0;
     blink_running = runs;
     api.system.timer.start(RAK_TIMER_1, 125 /*msec*/, (void *)0);  // Not system relevant
+  }else{ // Re-Trigger or stop (if 0)
+    blink_running = runs;
   }
 }
 int16_t blink_init(void) {
@@ -567,14 +570,13 @@ int16_t send_txpayload(void) {
     return -2011;
   }
   bool sres;
-  int32_t last_contact_sec = now_runtime - mlora_info.con.last_server_reply_runtime;
-  if (last_contact_sec >= 21600) {  // >6h always request confirmation
+  if (mlora_info.par.tx_with_conf) {  // request confirmation
     sres = api.lorawan.send(mlora_info.par.txanz, mlora_info.par.txbytes, mlora_info.par.txport, true);
   } else {
     sres = api.lorawan.send(mlora_info.par.txanz, mlora_info.par.txbytes, mlora_info.par.txport);
   }
   if (!sres) {
-    Serial.println("ERROR: Send failed");  // Bool - e.g. because of Duty Cycle lmitations
+    Serial.println("ERROR: Send failed");  // Bool - e.g. because of Duty Cycle limitations
     return -2010;
   }
   return 0;
@@ -585,7 +587,7 @@ void join_cb(int32_t status) {
   if (status == RAK_LORAMAC_STATUS_OK) {
     rejoins = 0;
     Serial.println("Network joined");
-    blink_timer_setvalrun(5, 8);  // 8 times 50% blink
+    blink_timer_setvalrun(5, 8);  // 8 times 50% blink: JOINED
     send_txpayload();             // Should be there
     mlora_info.con.join_runtime = now_runtime;
 #if HK_FLAGS & 8
@@ -600,6 +602,8 @@ void join_cb(int32_t status) {
 #if HK_FLAGS & 8
       hk_add_energy(JOIN_ENERGY);
 #endif
+    }else{
+      blink_timer_setvalrun(10, 8);  // 8 times short blink: ERROR
     }
   }
 }
@@ -705,9 +709,9 @@ int16_t lora_transfer(void) {
   }
   // Nothing heard from Server after 12h: Re-Join!
   int32_t last_contact_sec = now_runtime - mlora_info.con.last_server_reply_runtime;
-
-  int32_t last_contact_limit = 43200;                              // Each 12h reply expected
-  if (param.period > 7200) last_contact_limit = param.period * 6;  //or more
+  mlora_info.par.tx_with_conf = (last_contact_sec >= 21600) ? true : false;  // >6h always request confirmation
+  int32_t last_contact_limit = 43200;                                     // Each 12h reply expected
+  if (param.period > 7200) last_contact_limit = param.period * 6;         //or more
 
   if ((last_contact_sec > last_contact_limit) || !api.lorawan.njs.get()) {
     Serial.printf("Join Network...\n");  // Join or Rejoin
