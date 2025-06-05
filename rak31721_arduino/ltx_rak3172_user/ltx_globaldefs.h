@@ -30,7 +30,7 @@
 #define TX_FIX_ENERGY 116596     // uC For 3172-E/T at 3V3 @ DR0
 #endif
 
-#define PACKET_ENERGY (((TX_PER_BYTE_ENERGY * mlora_info.par.txanz) + TX_FIX_ENERGY) / (api.lorawan.dr.get() * 6 + 1))
+#define PACKET_ENERGY (((TX_PER_BYTE_ENERGY * mlora_info.txframe.txanz) + TX_FIX_ENERGY) / (api.lorawan.dr.get() * 6 + 1))
 
 
 // Definitions
