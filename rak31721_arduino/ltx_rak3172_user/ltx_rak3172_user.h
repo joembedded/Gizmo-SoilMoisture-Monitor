@@ -1,12 +1,12 @@
 // ltx_rak3172_user.h - Define Device specific Params
 
 #define USAGE_EXT_AT     // USE as AT modem with extended commands
-#define USAGE_STANDALONE // Single-Chip Stand alone solution
-#define LED_PIN PA4      // Standard LED vs. VCC - This is PIN for State-LED (if defined)
+//#define USAGE_STANDALONE // Single-Chip Stand alone solution
+//#define LED_PIN PA4      // Standard LED vs. VCC - This is PIN for State-LED (if defined)
 
 #define DEVICE_TYPE 8000         // Typically 8000: Basic System, choose your own value for your application.
 #define DEV_FAMILY "LTX-RAK3172" // Name of the application
-#define DEVICE_FW_VERSION 1      // Steps of 0.1 (e.g. 32 is Firmware V3.2)
+#define DEVICE_FW_VERSION 2      // Steps of 0.1 (e.g. 32 is Firmware V3.2)
 // Good combi: Both 1 or both 0: (1:Server periodically automatically adjusts DR with ADR set, else 0:use always maximum energy)
 // May be changed manually with AT-commands
 #define LORA_AUTO_DATARATE_REDUCTION 0     // 1:Init with ADR enabled (fix device), 0:Init with ADR disabled(movin device)
