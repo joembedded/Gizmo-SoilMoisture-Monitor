@@ -1,53 +1,16 @@
 /**
  * @file ltx_rak3172_user.ino
- * @brief LoRaWAN Sensor Firmware for RAK3172 modules using LTX Payload System.
- * @version 1.00
+ * @brief LoRaWAN Sensor Firmware for RAK3172 modules
  * @author JoEmbedded.de
  *
- * This firmware implements a complete LTX LoRa node on a RAK3172-E/T/L/SIP module.
- * It uses the LTX payload system for efficient uplink and downlink data transfer,
- * supporting F32 and F16 formats, error codes, and housekeeping (HK) data such as
- * battery voltage and consumed energy.
- *
- * @details
- * - Uplink and downlink routines for minimal overhead data transfer.
- * - LTX payload decoder available for ChirpStack, TTN, and other platforms.
- * - Housekeeping data (e.g., battery voltage) can be transmitted occasionally.
- * - Supports configuration via AT commands and Arduino IDE.
- * - Watchdog usage is recommended for low power consumption (~7µA).
- * - Extremely low power mode (<3µA) possible by disabling the watchdog.
- * - Parameters can be set via command string on LoRaWAN fPort10.
- *
- * @links
- * - LTX Payload Decoder: https://github.com/joembedded/payload-decoder
- * - RUI3 Documentation: https://docs.rakwireless.com/product-categories/software-apis-and-libraries/rui3/arduino-api
- *
- * @usage
- * 1. Flash latest RAK firmware to the RAK3172 module.
- * 2. Reset board and verify DEVEUI.
- * 3. Select correct board in Arduino IDE.
- * 4. Edit and upload user sketch.
- * 5. Configure parameters via AT commands.
- * 6. Initialize board and credentials.
- * 7. Board transmits automatically after power-on.
- * 8. Parameters can be sent as command strings via fPort10.
- *
- * @note
- * - The software runs in a timer interval of 30 seconds (with watchdog) or 120 seconds (without watchdog).
- * - Multiple commands per string are possible, separated by spaces.
- *
- * @section User Functions
- * - user_setup(): Initializes analog routines and configures analog pins.
- * - user_measure_values(): Simulates measurement, reads analog values, scales, and sets error codes.
- * - user_measure_hk_battery(): Returns cached module VCC value.
- * - user_measure_hk_temperature(): Measures internal temperature (valid if VCC = 3.3V).
- */
+ **/
 
 #include "ltx_rak3172_user.h"  // Specific User Setup for this Device
 #include "ltx_globaldefs.h"    // LTX common
 
+#if defined(USAGE_STANDALONE)
 /* Watchdog is recommended. If disabled: interval max. 120 sec, otherwise max. 30 sec */
-PARAM param = { _PMAGIC, "_measue_command_", 3600, 5, 1, /*WD*/ true, { 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0 } };
+PARAM param = { _PMAGIC , "_measure_command_", 3600, 5, 1, /*WD*/ true, { 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0 } };
 const char *koeff_desc[ANZ_KOEFF] = {
   "Multiplier Channel #0", "Offset Channel #0",
   "Multiplier Channel #1", "Offset Channel #1",
@@ -100,4 +63,6 @@ float user_measure_hk_battery(void) {
 float user_measure_hk_temperature(void) {
   return analog_read_internal_temp_3V3(10);  // 8 msec, Temp only if VCC = 3.3V
 }
+#endif // USAGE_STANDALONE
+
 // End of user routines
