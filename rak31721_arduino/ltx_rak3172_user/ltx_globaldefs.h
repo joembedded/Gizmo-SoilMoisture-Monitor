@@ -18,6 +18,9 @@
  * Payload 10 Bytes on Module @ DR0: ca. 150 mC => ca. 24 Transmissions per 1 mAh => 1500 mAh Battery allows 36000 Transmissions
  * => If possible (for fixed Devices) enable ADR (Auto Data Rate Reduction).
  */
+
+// Energie noch Nacharbeiten mit Real-World-Werten!!! Hier nur erstmal ungefaher!
+
 #ifdef STD_ENERGY_RAK3172LSIP_3V3 // LowPower L-SIP
 #define JOIN_ENERGY 100000        // uC For 3172-L at 3V3 @ DR0
 #define TX_PER_BYTE_ENERGY 1490   // uC/Byte For 3172-L at 3V3 @ DR0

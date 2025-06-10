@@ -1,8 +1,8 @@
 // ltx_rak3172_user.h - Define Device specific Params
 
 #define USAGE_EXT_AT     // USE as AT modem with extended commands
-//#define USAGE_STANDALONE // Single-Chip Stand alone solution
-//#define LED_PIN PA4      // Standard LED vs. VCC - This is PIN for State-LED (if defined)
+#define USAGE_STANDALONE // Single-Chip Stand alone solution
+#define LED_PIN PA4      // Standard LED vs. VCC - This is PIN for State-LED (if defined)
 
 #define DEVICE_TYPE 8000         // Typically 8000: Basic System, choose your own value for your application.
 #define DEV_FAMILY "LTX-RAK3172" // Name of the application
@@ -12,9 +12,10 @@
 #define LORA_AUTO_DATARATE_REDUCTION 0     // 1:Init with ADR enabled (fix device), 0:Init with ADR disabled(movin device)
 #define LORA_CONFIRM_MODE 0                // 1:Confirm TX, 0:Send unconfirmed
 #define USER_CREDENTIAL_SEED (get_mac_l()) // Dynamic/Random or Static, Macro to initialize (indiviodual) credentials generation
+
 // Define used LoRa-Energy scheme (see ltx_globaldefs.h):
-// #define STD_ENERGY_RAK3172LSIP_3V3
-#define STD_ENERGY_RAK3172MODULE_3V3
+#define STD_ENERGY_RAK3172LSIP_3V3
+//#define STD_ENERGY_RAK3172MODULE_3V3
 
 #if defined(USAGE_STANDALONE)
 #define HK_FLAGS 11        // HK values 1:BatVolt 2:Temp (4:Humidity) 8:Energy (16:Barometer)
