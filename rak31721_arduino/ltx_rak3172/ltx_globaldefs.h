@@ -19,6 +19,26 @@
  * => If possible (for fixed Devices) enable ADR (Auto Data Rate Reduction).
  */
 
+#ifndef LTX_GLOBALDEFS_H
+#define LTX_GLOBALDEFS_H
+
+// Energy also dependant from Antenna Matching! Bad match: lower energy.
+#ifdef STD_ENERGY_RAK3172LSIP_3V3  // LowPower L-SIP
+#define SOC_NAME "RAK3172L-SIP LowPower"
+#define JOIN_ENERGY 100000       // uC For 3172-L at 3V3 @ DR0
+#define TX_PER_BYTE_ENERGY 1490  // uC/Byte For 3172-L at 3V3 @ DR0
+#define TX_FIX_ENERGY 53511      // uC For 3172-L at 3V3 @ DR0
+#endif
+
+#ifdef STD_ENERGY_RAK3172MODULE_3V3  // NormalPower Module, Eval:-T/-SIP
+#define SOC_NAME "RAK3172 StdPower"
+#define JOIN_ENERGY 160000       // uC For 3172-E/T at 3V3 @ DR0
+#define TX_PER_BYTE_ENERGY 3404  // uC/Byte For 3172-E/T at 3V3 @ DR0
+#define TX_FIX_ENERGY 116596     // uC For 3172-E/T at 3V3 @ DR0
+#endif
+
+#define PACKET_ENERGY (((TX_PER_BYTE_ENERGY * mlora_info.txframe.txanz) + TX_FIX_ENERGY) / (api.lorawan.dr.get() * 6 + 1))
+
 extern void ltx_lib_setup(void);	// May call user_setup() and ..measure() if stand-alone
 extern void ltx_lib_loop(void);		// Call to RUN
 
@@ -87,4 +107,5 @@ extern uint32_t get_mac_l(void);
 extern uint32_t get_mac_h(void);
 #endif
 
+#endif
 //**
