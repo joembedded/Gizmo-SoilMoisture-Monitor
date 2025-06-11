@@ -52,7 +52,7 @@ typedef struct
   char messcmd[MAX_MESSCMD + 1]; // Defines the measurement command 'cmd'
   uint32_t period;               // (60..3599), 3600, xxx sec 'p'
   uint16_t hk_reload;            // If >=1: transmit with housekeeping 'hkr'
-  // If >= 1 (-199) LoRaPort, upper 1000 included for ASL 1:F16, 0:F32
+  // If >= 1 (-199) LoRaPort, upper 1000 included for Payload: +1000:F16, 0:F32
   // e.g. 11: rh/T(F32) or 1011(F16)
   uint16_t sensor_profile; // 'profile'
   bool use_watchdog;       // 'wd'

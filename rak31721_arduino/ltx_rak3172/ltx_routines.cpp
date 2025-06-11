@@ -50,6 +50,8 @@
  *  e            - Perform and display test measurement
  *  i            - Test measurement with test transmission, possibly LoRaWAN join
  *
+ * Board:
+ * https://raw.githubusercontent.com/RAKWireless/RAKwireless-Arduino-BSP-Index/main/package_rakwireless_com_rui_index.json
  */
 
 #include <stdio.h>
