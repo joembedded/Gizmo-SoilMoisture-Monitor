@@ -111,9 +111,9 @@
 			(subtractmaskfromsilk no)
 			(outputformat 1)
 			(mirror no)
-			(drillshape 1)
+			(drillshape 0)
 			(scaleselection 1)
-			(outputdirectory "")
+			(outputdirectory "rak3172_prod/")
 		)
 	)
 	(net 0 "")
@@ -230,7 +230,7 @@
 		(path "/2e38dc89-6d01-4cfd-a1db-bd3b1a5de7d1")
 		(sheetname "/")
 		(sheetfile "rak3172sip.kicad_sch")
-		(attr smd)
+		(attr smd dnp)
 		(fp_line
 			(start -0.237258 -0.5225)
 			(end 0.237258 -0.5225)
@@ -429,7 +429,7 @@
 		(path "/6fb592c0-f639-49d5-96bc-37e898b68a92")
 		(sheetname "/")
 		(sheetfile "rak3172sip.kicad_sch")
-		(attr smd)
+		(attr smd dnp)
 		(fp_line
 			(start -0.237258 -0.5225)
 			(end 0.237258 -0.5225)
@@ -612,7 +612,7 @@
 				)
 			)
 		)
-		(property "Description" "Inductor with ferrite core, small symbol"
+		(property "Description" "FerriteBead Murata MPZ1005S121ETD25"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -807,7 +807,7 @@
 		(path "/0d2ce46a-621b-436d-a6f8-ac89afd078d8")
 		(sheetname "/")
 		(sheetfile "rak3172sip.kicad_sch")
-		(attr smd)
+		(attr smd dnp)
 		(fp_line
 			(start -0.14058 0.51)
 			(end 0.14058 0.51)
@@ -1881,7 +1881,7 @@
 				)
 			)
 		)
-		(property "Description" "Inductor with ferrite core, small symbol"
+		(property "Description" "FerriteBead Murata MPZ1005S121ETD25"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -2856,7 +2856,7 @@
 				)
 			)
 		)
-		(property "Description" "Inductor"
+		(property "Description" "Inductor LQM21DN150M70L"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -3073,7 +3073,7 @@
 		(path "/685aa8a1-4860-498b-b061-db4c64f83828")
 		(sheetname "/")
 		(sheetfile "rak3172sip.kicad_sch")
-		(attr through_hole)
+		(attr through_hole exclude_from_bom)
 		(fp_line
 			(start -1.38 6.46)
 			(end 1.38 6.46)
@@ -3321,7 +3321,7 @@
 				)
 			)
 		)
-		(property "Description" "Inductor with ferrite core, small symbol"
+		(property "Description" "FerriteBead Murata MPZ1005S121ETD25"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -3715,7 +3715,7 @@
 		(path "/c332dd6d-3624-45b3-9e02-02f0d4c38e97")
 		(sheetname "/")
 		(sheetfile "rak3172sip.kicad_sch")
-		(attr smd)
+		(attr smd dnp)
 		(fp_line
 			(start -0.14058 0.51)
 			(end 0.14058 0.51)
@@ -4282,7 +4282,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "https://store.rakwireless.com/products/wisduo-module-rak3172-sip?variant=42482784796870"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -4294,7 +4294,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "RAK3172LP-SiP / 8XXMHz for EU868/IN865/RU864  SKU: 305049"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -6139,7 +6139,7 @@
 		(path "/6ca8da9a-8518-408a-91bb-369447c64d5f")
 		(sheetname "/")
 		(sheetfile "rak3172sip.kicad_sch")
-		(attr through_hole)
+		(attr through_hole exclude_from_bom)
 		(fp_line
 			(start -1.11 -1.11)
 			(end 0 -1.11)
@@ -6383,7 +6383,7 @@
 		(path "/bdff7ece-89af-4403-b37d-deebbf3b5301")
 		(sheetname "/")
 		(sheetfile "rak3172sip.kicad_sch")
-		(attr exclude_from_pos_files)
+		(attr exclude_from_pos_files exclude_from_bom)
 		(fp_circle
 			(center 0 0)
 			(end 0 0.7)
@@ -6866,7 +6866,7 @@
 				)
 			)
 		)
-		(property "Description" "Light emitting diode"
+		(property "Description" "LED (generic, bright, LowCost)"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -7704,7 +7704,7 @@
 		(path "/5a76f855-09a6-43c4-b400-7c02bf7fc918")
 		(sheetname "/")
 		(sheetfile "rak3172sip.kicad_sch")
-		(attr through_hole)
+		(attr through_hole exclude_from_bom)
 		(fp_line
 			(start -1.38 19.16)
 			(end 1.38 19.16)
@@ -8275,7 +8275,7 @@
 		(path "/889f4dd6-1ed1-4e78-a64b-e00ed15e5807")
 		(sheetname "/")
 		(sheetfile "rak3172sip.kicad_sch")
-		(attr exclude_from_pos_files)
+		(attr exclude_from_pos_files exclude_from_bom)
 		(fp_circle
 			(center 0 0)
 			(end 0 -2.286)
@@ -9003,7 +9003,7 @@
 				)
 			)
 		)
-		(property "Description" "coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, LEMO, ...)"
+		(property "Description" "U.FL socket (generic)"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -9020,7 +9020,7 @@
 		(path "/0ffaaeb7-670f-483d-9d4a-273710f63d5d")
 		(sheetname "/")
 		(sheetfile "rak3172sip.kicad_sch")
-		(attr smd)
+		(attr smd exclude_from_bom)
 		(fp_rect
 			(start -0.515 -0.94)
 			(end 1.575 0.94)
@@ -9544,7 +9544,7 @@
 		(path "/30b6a905-8db0-40f0-ac3e-610b08d58a48")
 		(sheetname "/")
 		(sheetfile "rak3172sip.kicad_sch")
-		(attr through_hole)
+		(attr through_hole exclude_from_bom)
 		(fp_line
 			(start -1.38 -1.38)
 			(end 0 -1.38)
@@ -11555,7 +11555,7 @@
 		(uuid "1ff97313-1b41-4b51-a2a9-5b737d9493bb")
 	)
 	(via
-		(at 99.91 74.5)
+		(at 99.92 74.2)
 		(size 0.6)
 		(drill 0.3)
 		(layers "F.Cu" "B.Cu")

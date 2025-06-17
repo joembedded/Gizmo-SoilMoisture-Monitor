@@ -6,8 +6,8 @@
 	(paper "A4")
 	(title_block
 		(title "RAK3172(LP)-SIP")
-		(date "2025-06-13")
-		(rev "V0.01")
+		(date "2025-06-16")
+		(rev "V0.02")
 		(company "JoEmbedded.de")
 	)
 	(lib_symbols
@@ -6378,7 +6378,7 @@
 		(at 237.49 97.79 270)
 		(unit 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced yes)
@@ -6545,7 +6545,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "https://store.rakwireless.com/products/wisduo-module-rak3172-sip?variant=42482784796870"
 			(at 143.51 88.9 0)
 			(effects
 				(font
@@ -6554,7 +6554,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "RAK3172LP-SiP / 8XXMHz for EU868/IN865/RU864  SKU: 305049"
 			(at 143.51 88.9 0)
 			(effects
 				(font
@@ -8918,7 +8918,7 @@
 		(at 262.89 88.9 0)
 		(unit 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced yes)
