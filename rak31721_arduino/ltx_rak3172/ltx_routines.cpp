@@ -23,6 +23,7 @@
  * Always available:
  * -----------------
  *  initeu868   - Initializes modem to EU868 and sets default DEVEUI/APPEUI/APPKEY
+ *                Note: Uses MAC of LORA-Modem!!!
  *  cred        - Shows the keys ("Credentials")
  *  ?           - Info about system/modem
  *  stat        - Statistics about last outgoing frame
