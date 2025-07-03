@@ -1,8 +1,8 @@
 /*
  * @file ltx_routines.cpp
  * @brief LoRaWAN Sensor – background routines
- * @version 1.02
  * @author JoEmbedded.de
+ * @version: APP_VERSION
  *
  * This module implements a complete LoRaWAN node.
  * Depending on the defined USAGE_ (see ltx_rak3172_user.h), the modem
@@ -26,7 +26,7 @@
  *                Note: Uses MAC of LORA-Modem!!!
  *  cred        - Shows the keys ("Credentials")
  *  ?           - Info about system/modem
- *  stat        - Statistics about last outgoing frame
+ *  stat        - Statistics about last (outgoing) frame and (optional server reply)
  *  reset       - Resets the modem (energy consumption is retained)
  *
  * Only for USAGE_STANDALONE:
@@ -54,6 +54,8 @@
  * Board:
  * https://raw.githubusercontent.com/RAKWireless/RAKwireless-Arduino-BSP-Index/main/package_rakwireless_com_rui_index.json
  */
+
+#define APP_VERSION 14  // 10 == 1.0
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -339,8 +341,7 @@ uint16_t my_rand16(void) {
 }
 void set_my_rbytes(uint8_t *pu, int16_t anz) {
   while (anz--) {
-    *pu = (my_rand16() & 15) << 4;
-    *pu++ |= (my_rand16() & 15);
+    *pu++ = (my_rand16() & 255);  // Add Random Byte
   }
 }
 // String-Matcher Match "what" in *pstr
@@ -979,10 +980,13 @@ static int16_t parse_ltx_cmd(char *pc) {
 #endif
     // Statistics
   } else if (!strcasecmp(pc, "stat")) {
-    Serial.printf("intr.F%u rec.R%u ener.G%u", mlora_info.stat.in_transfer, mlora_info.stat.sth_received, mlora_info.stat.frame_energy);  // Fuer Transfer
+    int32_t last_contact_sec = now_runtime - mlora_info.con.last_server_reply_runtime;
+    //              B  B   u32 u32 B  last_contact_sec in Kombi with cfm.get(): to determin errors
+    Serial.printf("F%u R%u E%u L%u C:%u", mlora_info.stat.in_transfer, mlora_info.stat.sth_received, mlora_info.stat.frame_energy, last_contact_sec, api.lorawan.cfm.get());  // Fuer Transfer
     if (mlora_info.con.last_server_time_runtime) {
       int32_t tage = now_runtime - mlora_info.con.last_server_time_runtime;
-      Serial.printf(" t.T%u", tage);  // Age of LoRa-Time
+      //              u32
+      Serial.printf(" T%u", tage);  // Age of LoRa-Time
     }
     Serial.printf("\n");
   }
@@ -1210,7 +1214,7 @@ bool init_ltx_ats(void) {
 }
 
 // ---- lib_setup() -------------
-extern const char *sw_version;
+extern const char *sw_version; // RUI3-Version
 void ltx_lib_setup() {
   int16_t res = 0;
 
@@ -1221,7 +1225,7 @@ void ltx_lib_setup() {
   Serial.begin(Serial.getBaudrate());
   Serial.printf("*** " DEV_FAMILY " (C)JoEmbedded.de ***\n");
   Serial.printf("MAC:%08X%08X DEVICE_TYPE:%u V%u.%u\n", get_mac_h(), get_mac_l(), DEVICE_TYPE, DEVICE_FW_VERSION / 10, DEVICE_FW_VERSION % 10);
-  Serial.printf("Version: %s ('%s')\n\n", sw_version,SOC_NAME);
+  Serial.printf("Version:%s('%s') LTX:V%u.%u\n\n", sw_version, SOC_NAME, APP_VERSION / 10, APP_VERSION % 10);
 
 #if defined(USAGE_STANDALONE)
   Serial.printf("Usage: STANDALONE\n");
