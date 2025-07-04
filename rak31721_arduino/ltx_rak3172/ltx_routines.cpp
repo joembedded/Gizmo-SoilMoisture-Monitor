@@ -982,7 +982,7 @@ static int16_t parse_ltx_cmd(char *pc) {
   } else if (!strcasecmp(pc, "stat")) {
     int32_t last_contact_sec = now_runtime - mlora_info.con.last_server_reply_runtime;
     //              B  B   u32 u32 B  last_contact_sec in Kombi with cfm.get(): to determin errors
-    Serial.printf("F%u R%u E%u L%u C:%u", mlora_info.stat.in_transfer, mlora_info.stat.sth_received, mlora_info.stat.frame_energy, last_contact_sec, api.lorawan.cfm.get());  // Fuer Transfer
+    Serial.printf("F%u R%u E%u L%u C%u", mlora_info.stat.in_transfer, mlora_info.stat.sth_received, mlora_info.stat.frame_energy, last_contact_sec, api.lorawan.cfm.get());  // Fuer Transfer
     if (mlora_info.con.last_server_time_runtime) {
       int32_t tage = now_runtime - mlora_info.con.last_server_time_runtime;
       //              u32
@@ -1224,7 +1224,7 @@ void ltx_lib_setup() {
 
   Serial.begin(Serial.getBaudrate());
   Serial.printf("*** " DEV_FAMILY " (C)JoEmbedded.de ***\n");
-  Serial.printf("MAC:%08X%08X DEVICE_TYPE:%u V%u.%u\n", get_mac_h(), get_mac_l(), DEVICE_TYPE, DEVICE_FW_VERSION / 10, DEVICE_FW_VERSION % 10);
+  Serial.printf("LMAC:%08X%08X DEVICE_TYPE:%u V%u.%u\n", get_mac_h(), get_mac_l(), DEVICE_TYPE, DEVICE_FW_VERSION / 10, DEVICE_FW_VERSION % 10);
   Serial.printf("Version:%s('%s') LTX:V%u.%u\n\n", sw_version, SOC_NAME, APP_VERSION / 10, APP_VERSION % 10);
 
 #if defined(USAGE_STANDALONE)
@@ -1281,7 +1281,7 @@ void ltx_lib_setup() {
     res = blink_init();  // A timer for LED Signals
 #endif
 
-  show_credentials();
+  show_credentials(); // Side effect: check if device is initialised
 
   api.lorawan.registerJoinCallback(join_cb);
   api.lorawan.registerRecvCallback(recv_cb);
