@@ -937,7 +937,6 @@ static int16_t parse_ltx_cmd(char *pc) {
   } else if (str_cmatch("cred", pc)) {  // cred.. : Credentials and Setup
     show_credentials();
   } else if (str_cmatch("?", pc)) {  // ?: Pure info function or ?k coefficients
-    Serial.printf("Info:\n");
     Serial.printf("DEVICE_TYPE: %u\n", DEVICE_TYPE);
     if (!mlora_info.con.device_init) {
       Serial.printf("*** Device not init! ***\n");
@@ -1164,7 +1163,11 @@ static int16_t parse_ltx_cmd(char *pc) {
     }
   }
 #endif
-  else if (!strcasecmp(pc, "reset")) {  // Reset Board
+  else if (str_cmatch("echo", pc)) { // Echo-Test (Communication) - Seems 
+    pc+=4;
+    Serial.printf("Echo(%d)'%s'\n",strlen(pc),pc);
+  }else if (!strcasecmp(pc, "reset")) {  // Reset Board
+
     Serial.printf("Reset...\n");
     delay(50);
     api.system.reboot();
