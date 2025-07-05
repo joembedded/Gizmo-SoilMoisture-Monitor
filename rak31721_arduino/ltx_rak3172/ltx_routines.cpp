@@ -1121,17 +1121,35 @@ static int16_t parse_ltx_cmd(char *pc) {
   }
 #endif  // USAGE_STANDALONE
 #if defined(USAGE_EXT_AT)
-  else if (str_cmatch("send ", pc)) {
+  else if (str_cmatch("send ", pc)) {  // send PORT
     uint16_t port = strtoul(pc + 5, &pc, 10);
     if (port < 1 || port > 223)
       res = -2012;  // Illegal fPort
 
-    else if (*pc != ',')
-      res = -2013;  // ':' not possible ( == new argument, ',' separates args)
+    else if (*pc)
+      res = -2013;
     else {
       pc++;
-      mlora_info.txframe.txanz = 0;
       mlora_info.txframe.txport = port;
+      if (!mlora_info.txframe.txanz)
+        res = -2011;  // Nothing to send
+      if (!mlora_info.con.device_init) {
+        Serial.printf("*** Device not init! ***\n");
+        res = -2017;  // Not initialised
+      }
+      if (!res) {
+        res = lora_send_packet();
+      }
+    }
+  } else if (str_cmatch("tput ", pc)) {  // Put TX packet in buffer '*': add, else start at 0
+    pc += 5;
+    if (*pc != '*') mlora_info.txframe.txanz = 0;  // New Block 'xxxx..'
+    else {
+      pc++;
+      if (!mlora_info.txframe.txanz) res = -2018;  // '*xxxx..' only to continue block
+    }
+    // Add Data to txbuffer
+    if (!res)
       for (;;) {
         char c = *pc;
         if (*pc == 0)
@@ -1151,22 +1169,14 @@ static int16_t parse_ltx_cmd(char *pc) {
         }
         mlora_info.txframe.txbytes[mlora_info.txframe.txanz++] = fpool_get_hex(&pc, 2);
       }
-      if (!mlora_info.txframe.txanz)
-        res = -2011;  // Nothing to send
-      if (!mlora_info.con.device_init) {
-        Serial.printf("*** Device not init! ***\n");
-        res = -2017;  // Not initialised
-      }
-      if (!res) {
-        res = lora_send_packet();
-      }
-    }
+    if (res) mlora_info.txframe.txanz = 0;
+    else Serial.printf("Txbuf:%u\n", mlora_info.txframe.txanz);  // Show No. Bytes in Buffer
   }
 #endif
-  else if (str_cmatch("echo", pc)) { // Echo-Test (Communication) - Seems 
-    pc+=4;
-    Serial.printf("Echo(%d)'%s'\n",strlen(pc),pc);
-  }else if (!strcasecmp(pc, "reset")) {  // Reset Board
+  else if (str_cmatch("echo", pc)) {  // Echo-Test (Communication) - Seems cmd size limited
+    pc += 4;
+    Serial.printf("Echo(%d)'%s'\n", strlen(pc), pc);
+  } else if (!strcasecmp(pc, "reset")) {  // Reset Board
 
     Serial.printf("Reset...\n");
     delay(50);
@@ -1217,7 +1227,7 @@ bool init_ltx_ats(void) {
 }
 
 // ---- lib_setup() -------------
-extern const char *sw_version; // RUI3-Version
+extern const char *sw_version;  // RUI3-Version
 void ltx_lib_setup() {
   int16_t res = 0;
 
@@ -1284,7 +1294,7 @@ void ltx_lib_setup() {
     res = blink_init();  // A timer for LED Signals
 #endif
 
-  show_credentials(); // Side effect: check if device is initialised
+  show_credentials();  // Side effect: check if device is initialised
 
   api.lorawan.registerJoinCallback(join_cb);
   api.lorawan.registerRecvCallback(recv_cb);
