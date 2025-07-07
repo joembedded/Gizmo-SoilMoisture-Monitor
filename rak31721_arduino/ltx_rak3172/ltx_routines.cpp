@@ -645,7 +645,7 @@ static int16_t send_txpayload(void) {
     sres = api.lorawan.send(mlora_info.txframe.txanz, mlora_info.txframe.txbytes, mlora_info.txframe.txport);
   }
   if (!sres) {
-    Serial.println("ERROR: Send failed");  // Bool - e.g. because of Duty Cycle limitations
+    Serial.println("ERROR: -2010, Send failed");  // Bool - e.g. because of Duty Cycle limitations or TCXO timeout
     mlora_info.stat.in_transfer = false;
     return -2010;  // Send failed
   }
@@ -980,12 +980,12 @@ static int16_t parse_ltx_cmd(char *pc) {
     // Statistics
   } else if (!strcasecmp(pc, "stat")) {
     int32_t last_contact_sec = now_runtime - mlora_info.con.last_server_reply_runtime;
-    //              B  B   u32 u32 B  last_contact_sec in Kombi with cfm.get(): to determin errors
-    Serial.printf("F%u R%u E%u L%u C%u", mlora_info.stat.in_transfer, mlora_info.stat.sth_received, mlora_info.stat.frame_energy, last_contact_sec, api.lorawan.cfm.get());  // Fuer Transfer
+    //           '+F' B  B  B  u32 u32 B  last_contact_sec in Kombi with cfm.get(): to determin errors
+    Serial.printf("+F%u N%u R%u E%u L%u C%u", mlora_info.stat.in_transfer, api.lorawan.njs.get(), mlora_info.stat.sth_received, mlora_info.stat.frame_energy, last_contact_sec, api.lorawan.cfm.get());  // Fuer Transfer
     if (mlora_info.con.last_server_time_runtime) {
       int32_t tage = now_runtime - mlora_info.con.last_server_time_runtime;
       //              u32
-      Serial.printf(" T%u", tage);  // Age of LoRa-Time
+      Serial.printf(" T%u", tage);  // Age of LoRa-Time (timereq possible only fater joined!)
     }
     Serial.printf("\n");
   }
