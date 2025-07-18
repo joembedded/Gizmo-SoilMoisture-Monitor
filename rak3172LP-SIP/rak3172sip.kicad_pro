@@ -509,9 +509,9 @@
       "plot": "rak3172_prod/",
       "pos_files": "rak3172_prod/",
       "specctra_dsn": "",
-      "step": "",
+      "step": "rak3172sip.step",
       "svg": "",
-      "vrml": ""
+      "vrml": "rak3172sip.wrl"
     },
     "page_layout_descr_file": ""
   },

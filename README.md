@@ -57,6 +57,7 @@ Die Frage war auch, ob das 40 Mhz Signal störende Oberwellen abstrahlt (diese s
 ## Changelog  ##
 - 01.04.2023 V0.01 Gizmo Prototyp als PCB in Fertigung gegeben
 - 07.04.2023 Erste elektrische Tests der PCB V0.01
-- 15.05.2025 Gizmo V0.15 SDI-12 und Bluetooth
+- 15.05.2025 Gizmo V0.15 als SDI-12 Sensor und mit Bluetooth 
+- 18.07.2025 RAK3172LP: erste Prototypen mit KiCAD Breakout-Board OK
 ---
 

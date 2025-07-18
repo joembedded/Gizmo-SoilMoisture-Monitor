@@ -55,7 +55,7 @@
  * https://raw.githubusercontent.com/RAKWireless/RAKwireless-Arduino-BSP-Index/main/package_rakwireless_com_rui_index.json
  */
 
-#define APP_VERSION 14  // 10 == 1.0
+#define APP_VERSION 15  // 10 == 1.0
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -88,6 +88,7 @@ typedef struct
     uint32_t join_runtime;
     uint32_t last_server_reply_runtime;  // When was the last time something was heard from the server? Reply
     uint32_t last_server_time_runtime;   // If set; Runtime of lats TIME update
+    uint32_t txframe_cnt; // Counts each quequed tx frame since Reset
   } con;
   struct
   {                                        // Set parameters
@@ -384,6 +385,8 @@ uint16_t float_to_half(float f) {
     float f;
     uint32_t u;
   } u = { f };
+  if(f < -65504.0) return 0xFC00; // neg INF
+  if(f > 65504.0) return 0x7C00;  // INF
   uint32_t f_bits = u.u;
   uint32_t sign = (f_bits >> 16) & 0x8000;  // sign shift to 16-bit position
   uint32_t exponent = (f_bits >> 23) & 0xFF;
@@ -636,6 +639,7 @@ static int16_t send_txpayload(void) {
     Serial.println("ERROR: Nothing to send");
     return -2011;
   }
+  mlora_info.con.txframe_cnt++;
   mlora_info.stat.in_transfer = true;
   mlora_info.stat.sth_received = false;
   bool sres;
@@ -763,7 +767,7 @@ int16_t lora_send_packet(void) {
 
   // Auto-Request confirmater after 6h, if nothing heard after 12h -(param.period*6) or 1d: Re-Join
   int32_t last_contact_sec = now_runtime - mlora_info.con.last_server_reply_runtime;
-  mlora_info.txframe.tx_with_conf = (last_contact_sec >= 21600) ? true : false;  // >6h always request confirmation
+  mlora_info.txframe.tx_with_conf = (last_contact_sec >= 14400) ? true : false;  // >4h always request confirmation
   int32_t last_contact_limit = 43200;                                            // Each 12h reply expected
 #if defined(USAGE_STANDALONE)
   if (param.period > 7200)
@@ -981,7 +985,8 @@ static int16_t parse_ltx_cmd(char *pc) {
   } else if (!strcasecmp(pc, "stat")) {
     int32_t last_contact_sec = now_runtime - mlora_info.con.last_server_reply_runtime;
     //           '+F' B  B  B  u32 u32 B  last_contact_sec in Kombi with cfm.get(): to determin errors
-    Serial.printf("+F%u N%u R%u E%u L%u C%u", mlora_info.stat.in_transfer, api.lorawan.njs.get(), mlora_info.stat.sth_received, mlora_info.stat.frame_energy, last_contact_sec, api.lorawan.cfm.get());  // Fuer Transfer
+    Serial.printf("+F%u N%u R%u E%u L%u C%u S%u", mlora_info.stat.in_transfer, api.lorawan.njs.get(),  mlora_info.stat.sth_received, mlora_info.stat.frame_energy,
+      last_contact_sec, api.lorawan.cfm.get(), (mlora_info.con.txframe_cnt%1000));  // Fuer Transfer
     if (mlora_info.con.last_server_time_runtime) {
       int32_t tage = now_runtime - mlora_info.con.last_server_time_runtime;
       //              u32

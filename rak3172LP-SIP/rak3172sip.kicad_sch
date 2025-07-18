@@ -6,8 +6,8 @@
 	(paper "A4")
 	(title_block
 		(title "RAK3172(LP)-SIP")
-		(date "2025-06-16")
-		(rev "V0.02")
+		(date "2025-07-18")
+		(rev "V0.03")
 		(company "JoEmbedded.de")
 	)
 	(lib_symbols
@@ -4009,9 +4009,9 @@
 		)
 		(uuid b2f702c3-1e70-4a85-962a-e5d1b547324e)
 	)
-	(text "Z1: adjusts ANT to el. Lambda/4\nZ2-4: tbd. for Impedance matching"
+	(text "Variants:\nJ1: Assembled for external Antenna\n\nZ2: Assembled for internal Antenna\nZ1: dto\nZ3: dto\n\nZ1,Z3: depending on PCB material\n"
 		(exclude_from_sim no)
-		(at 245.364 105.918 0)
+		(at 244.602 117.602 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4635,6 +4635,16 @@
 		)
 		(uuid "45a9285c-c3a8-45af-bdd8-d852869d10a0")
 	)
+	(polyline
+		(pts
+			(xy 237.49 105.41) (xy 237.49 110.49)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "45e3b518-a9a0-4c29-ad71-c37a534f181e")
+	)
 	(wire
 		(pts
 			(xy 204.47 73.66) (xy 193.04 73.66)
@@ -5175,6 +5185,16 @@
 		)
 		(uuid "9cbe2bd9-b8cd-4e72-90b1-8d3ea2c4e21e")
 	)
+	(polyline
+		(pts
+			(xy 236.855 106.68) (xy 237.49 105.41)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9e2ed5b8-20e0-4bad-9944-861e1081d801")
+	)
 	(wire
 		(pts
 			(xy 203.2 50.8) (xy 214.63 50.8)
@@ -5184,6 +5204,16 @@
 			(type default)
 		)
 		(uuid "9f2795c5-d97e-4ac9-8407-e9e7da93833e")
+	)
+	(polyline
+		(pts
+			(xy 254.635 92.71) (xy 255.27 91.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a098c4f4-5456-499c-880f-d220fe8466ed")
 	)
 	(wire
 		(pts
@@ -5224,6 +5254,16 @@
 			(type default)
 		)
 		(uuid "a865d9e6-363b-402c-b27c-f354b7746a71")
+	)
+	(polyline
+		(pts
+			(xy 255.27 91.44) (xy 255.27 110.49)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a87f1afc-1b11-4b3c-9c43-110285eb78fa")
 	)
 	(wire
 		(pts
@@ -5405,6 +5445,16 @@
 		)
 		(uuid "c50270bc-2a7e-4e13-a000-11a858ba81cf")
 	)
+	(polyline
+		(pts
+			(xy 254 110.49) (xy 255.27 110.49)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c568143f-13d7-45bd-a5b7-95ccc3026521")
+	)
 	(wire
 		(pts
 			(xy 220.98 88.9) (xy 223.52 88.9)
@@ -5434,6 +5484,16 @@
 			(type default)
 		)
 		(uuid "ca0905ec-521c-46bc-82ff-3852b56961d5")
+	)
+	(polyline
+		(pts
+			(xy 243.84 110.49) (xy 237.49 110.49)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "cbd0dc39-f031-4fc7-a275-2c26b522c540")
 	)
 	(wire
 		(pts
@@ -5655,6 +5715,16 @@
 		)
 		(uuid "f5995325-4770-4eda-be06-42a7e567cde9")
 	)
+	(polyline
+		(pts
+			(xy 255.905 92.71) (xy 255.27 91.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f6c5879d-51d2-4d21-9f7c-a76829caef63")
+	)
 	(wire
 		(pts
 			(xy 168.91 81.28) (xy 172.72 81.28)
@@ -5664,6 +5734,16 @@
 			(type default)
 		)
 		(uuid "fdd5925c-4bcb-4b95-9005-20b7af2558b3")
+	)
+	(polyline
+		(pts
+			(xy 238.125 106.68) (xy 237.49 105.41)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fe826a42-89c5-4dac-8086-fb820d765f81")
 	)
 	(global_label "SDA2"
 		(shape input)
@@ -6255,7 +6335,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "tbd"
+		(property "Value" "np"
 			(at 250.19 93.9862 0)
 			(effects
 				(font
@@ -7405,7 +7485,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp yes)
+		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "2e38dc89-6d01-4cfd-a1db-bd3b1a5de7d1")
 		(property "Reference" "Z2"
@@ -8987,7 +9067,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp yes)
+		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "6fb592c0-f639-49d5-96bc-37e898b68a92")
 		(property "Reference" "Z1"
@@ -8998,7 +9078,7 @@
 				)
 			)
 		)
-		(property "Value" "0"
+		(property "Value" "8.2nH"
 			(at 273.05 86.36 90)
 			(effects
 				(font
@@ -10198,7 +10278,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp yes)
+		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "c332dd6d-3624-45b3-9e02-02f0d4c38e97")
 		(property "Reference" "Z3"
@@ -10210,7 +10290,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "tbd"
+		(property "Value" "5.6nH"
 			(at 265.43 93.9862 0)
 			(effects
 				(font
