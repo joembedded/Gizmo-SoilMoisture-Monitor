@@ -107,5 +107,42 @@ extern uint32_t get_mac_l(void);
 extern uint32_t get_mac_h(void);
 #endif
 
+#define MAX_PAYBUF_ANZ 51  // Maximum number of bytes to receive/send
+typedef struct
+{
+  struct
+  {                    // Connection stuff
+    bool device_init;  // true if device initialized (DEVEUI, APPEUI, APPKEY, BAND)
+    uint32_t join_runtime;
+    uint32_t last_server_reply_runtime;  // When was the last time something was heard from the server? Reply
+    uint32_t last_server_time_runtime;   // If set; Runtime of lats TIME update
+    uint32_t txframe_cnt;                // Counts each quequed tx frame since Reset
+  } con;
+  struct
+  {                                        // Set parameters
+    bool tx_with_conf;                     // (intern) If true override CFM
+    uint8_t txanz;                         // Message to send if >0
+    uint8_t txport;                        // Port to send, 1-223 allowed
+    uint8_t txbytes[MAX_PAYBUF_ANZ + 32];  // Always binary, but technical reserve
+  } txframe;
+  struct
+  {
+    bool in_transfer;       // TRUE during RADIO transfer
+    bool sth_received;      // TRUE if someting received, FALSE before send
+    uint32_t frame_energy;  // Energy eines externen Frames
+#if defined(USAGE_STANDALONE)
+    int16_t flags;  // 15 Bits Flags or if <0: Error / "Reason"
+                    // &128:RESET
+                    // (&64:Alarm) unused here
+                    // (&32:oldAlarm) unused here
+                    // &15: Reason: 2:Auto, 3 Manual, Rest n.d.
+
+    uint8_t hk_dcnt;  // If 0: always measure HK
+    bool hk_valid;    // True if valid for this measurement
+#endif
+  } stat;
+} MLORA_INFO;  // Modem Lora Info
+extern MLORA_INFO mlora_info;
+
 #endif
 //**

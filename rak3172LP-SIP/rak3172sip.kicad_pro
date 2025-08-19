@@ -509,7 +509,7 @@
       "plot": "rak3172_prod/",
       "pos_files": "rak3172_prod/",
       "specctra_dsn": "",
-      "step": "rak3172sip.step",
+      "step": "../../../../html/wrk/viewer3d/rak3172sip.glb",
       "svg": "",
       "vrml": "rak3172sip.wrl"
     },

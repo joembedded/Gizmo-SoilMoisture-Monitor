@@ -55,7 +55,7 @@
  * https://raw.githubusercontent.com/RAKWireless/RAKwireless-Arduino-BSP-Index/main/package_rakwireless_com_rui_index.json
  */
 
-#define APP_VERSION 15  // 10 == 1.0
+#define APP_VERSION 17  // 10 == 1.0
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -78,45 +78,10 @@ uint32_t _tb_novo[4] __attribute__((section(".non_init")));
 #define hk_batperc_h_neg _tb_novo[2]
 #define hk_batperc_sum32 _tb_novo[3]
 
-// Internal Defines - Infos
-#define MAX_PAYBUF_ANZ 51  // Maximum number of bytes to receive/send
-typedef struct
-{
-  struct
-  {                    // Connection stuff
-    bool device_init;  // true if device initialized (DEVEUI, APPEUI, APPKEY, BAND)
-    uint32_t join_runtime;
-    uint32_t last_server_reply_runtime;  // When was the last time something was heard from the server? Reply
-    uint32_t last_server_time_runtime;   // If set; Runtime of lats TIME update
-    uint32_t txframe_cnt; // Counts each quequed tx frame since Reset
-  } con;
-  struct
-  {                                        // Set parameters
-    bool tx_with_conf;                     // (intern) If true override CFM
-    uint8_t txanz;                         // Message to send if >0
-    uint8_t txport;                        // Port to send, 1-223 allowed
-    uint8_t txbytes[MAX_PAYBUF_ANZ + 32];  // Always binary, but technical reserve
-  } txframe;
-  struct
-  {
-    bool in_transfer;       // TRUE during RADIO transfer
-    bool sth_received;      // TRUE if someting received, FALSE before send
-    uint32_t frame_energy;  // Energy eines externen Frames
-#if defined(USAGE_STANDALONE)
-    int16_t flags;  // 15 Bits Flags or if <0: Error / "Reason"
-                    // &128:RESET
-                    // (&64:Alarm) unused here
-                    // (&32:oldAlarm) unused here
-                    // &15: Reason: 2:Auto, 3 Manual, Rest n.d.
-
-    uint8_t hk_dcnt;  // If 0: always measure HK
-    bool hk_valid;    // True if valid for this measurement
-#endif
-  } stat;
-} MLORA_INFO;  // Modem Lora Info
-
 // Globals
 MLORA_INFO mlora_info;
+
+// Internal Defines - Infos
 
 /* _tb_novo[] implements an NV-RAM that retains data in RAM even after reset
  * used here for the energy counter. _tb_novo[1] and [2] must
@@ -385,8 +350,8 @@ uint16_t float_to_half(float f) {
     float f;
     uint32_t u;
   } u = { f };
-  if(f < -65504.0) return 0xFC00; // neg INF
-  if(f > 65504.0) return 0x7C00;  // INF
+  if (f < -65504.0) return 0xFC00;  // neg INF
+  if (f > 65504.0) return 0x7C00;   // INF
   uint32_t f_bits = u.u;
   uint32_t sign = (f_bits >> 16) & 0x8000;  // sign shift to 16-bit position
   uint32_t exponent = (f_bits >> 23) & 0xFF;
@@ -746,6 +711,7 @@ void send_cb(int32_t status) {
   if (status != RAK_LORAMAC_STATUS_OK)
     Serial.printf("ERROR: Send status: %d\n", status);
   mlora_info.stat.in_transfer = false;
+  mlora_info.stat.flags &= 0xF0;  // Lower 4 Bits (reson) for Single Use
 }
 // ---CB End
 
@@ -758,23 +724,25 @@ void send_cb(int32_t status) {
  * handles CFM=0/1
  */
 int16_t lora_send_packet(void) {
-  if (dbg_until_runtime > now_runtime) {  // Show Payload
-    Serial.printf("P[%u]:", mlora_info.txframe.txport);
-    for (uint16_t i = 0; i < mlora_info.txframe.txanz; i++)
-      Serial.printf("%02X", mlora_info.txframe.txbytes[i]);
-    Serial.printf("\n");
-  }
-
   // Auto-Request confirmater after 6h, if nothing heard after 12h -(param.period*6) or 1d: Re-Join
   int32_t last_contact_sec = now_runtime - mlora_info.con.last_server_reply_runtime;
   mlora_info.txframe.tx_with_conf = (last_contact_sec >= 14400) ? true : false;  // >4h always request confirmation
   int32_t last_contact_limit = 43200;                                            // Each 12h reply expected
 #if defined(USAGE_STANDALONE)
+  if (mlora_info.stat.flags & 0xE0) mlora_info.txframe.tx_with_conf = true;  // Reset, (old)Alarms: Important Events to Report
   if (param.period > 7200)
     last_contact_limit = param.period * 6;  // or more
 #else
   last_contact_limit = 86400;  // If not Standalone 1d
 #endif
+  if (dbg_until_runtime > now_runtime) {  // Show Payload
+    Serial.printf("P[%u]:", mlora_info.txframe.txport);
+    for (uint16_t i = 0; i < mlora_info.txframe.txanz; i++)
+      Serial.printf("%02X", mlora_info.txframe.txbytes[i]);
+    Serial.printf(" C%u S%u\n", mlora_info.txframe.tx_with_conf, mlora_info.con.txframe_cnt);
+    // Serial.printf("DBG: Flags%u Laco:%u\n", mlora_info.stat.flags,last_contact_sec);
+  }
+
   if ((last_contact_sec > last_contact_limit) || !api.lorawan.njs.get()) {
     Serial.printf("Join Network...\n");  // Join or Rejoin
     rejoins = 3;                         // 1+3 attempts
@@ -981,16 +949,16 @@ static int16_t parse_ltx_cmd(char *pc) {
         Serial.printf("INFO: Parameter not saved!\n");
     }
 #endif
-    // Statistics
+    // Statistics (always)
   } else if (!strcasecmp(pc, "stat")) {
     int32_t last_contact_sec = now_runtime - mlora_info.con.last_server_reply_runtime;
     //           '+F' B  B  B  u32 u32 B  last_contact_sec in Kombi with cfm.get(): to determin errors
-    Serial.printf("+F%u N%u R%u E%u L%u C%u S%u", mlora_info.stat.in_transfer, api.lorawan.njs.get(),  mlora_info.stat.sth_received, mlora_info.stat.frame_energy,
-      last_contact_sec, api.lorawan.cfm.get(), (mlora_info.con.txframe_cnt%1000));  // Fuer Transfer
+    Serial.printf("+F%u N%u R%u E%u L%u C%u S%u", mlora_info.stat.in_transfer, api.lorawan.njs.get(), mlora_info.stat.sth_received, mlora_info.stat.frame_energy,
+                  last_contact_sec, api.lorawan.cfm.get(), mlora_info.con.txframe_cnt);  // Fuer Transfer
     if (mlora_info.con.last_server_time_runtime) {
       int32_t tage = now_runtime - mlora_info.con.last_server_time_runtime;
       //              u32
-      Serial.printf(" T%u", tage);  // Age of LoRa-Time (timereq possible only fater joined!)
+      Serial.printf(" T%u", tage);  // Age of LoRa-Time (timereq possible only after joined!)
     }
     Serial.printf("\n");
   }
@@ -1209,7 +1177,7 @@ int ltx_cmd_handler(SERIAL_PORT _port, char *cmd, stParam *param) {
   if (param->argc != 1)
     res = -2009;  // Maybe ':' or no args
   else {
-    dbg_until_runtime = now_runtime + 600;  // Debug for 10 min after commands
+    dbg_until_runtime = now_runtime + 1800;  // Debug for 30 min after commands
 #if defined(USAGE_STANDALONE)
     int32_t delta2next = next_periodic_runtime - now_runtime;
     if (delta2next < 60)

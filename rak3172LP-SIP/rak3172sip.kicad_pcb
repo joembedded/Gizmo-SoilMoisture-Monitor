@@ -9441,7 +9441,7 @@
 			(net 1 "GND")
 			(pinfunction "Ext")
 			(pintype "passive")
-			(uuid "fa346097-b222-43f1-84ad-41135c651fa0")
+			(uuid "0673bd68-85e0-4088-b37f-f39bff546173")
 		)
 		(embedded_fonts no)
 		(model "${KICAD9_3DMODEL_DIR}/Connector_Coaxial.3dshapes/U.FL_Hirose_U.FL-R-SMT-1_Vertical.step"
