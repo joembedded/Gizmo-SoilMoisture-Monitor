@@ -7,7 +7,7 @@
 	(title_block
 		(title "RAK3172(LP)-SIP")
 		(date "2025-07-18")
-		(rev "V0.03")
+		(rev "V0.04")
 		(company "JoEmbedded.de")
 	)
 	(lib_symbols
@@ -4106,6 +4106,16 @@
 		)
 		(uuid "b69aed01-2c62-4c08-9334-9a3fe6879852")
 	)
+	(text "LowPower-Version!"
+		(exclude_from_sim no)
+		(at 246.888 61.214 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "bdfb45b9-4785-47d8-8655-280cbc5e3772")
+	)
 	(text "Bead120:   0402 120_Ohm@100MHz 0.1_Ohm\n		   BLM15PD121SN1B \n		   MPZ1005S121ETD25\n\nInd. 15uH: 0805 15uH 1.23_Ohm 250_mA Fres:24Mhz\n	       LQM21DN150M70L "
 		(exclude_from_sim no)
 		(at 226.568 23.622 0)
@@ -4126,6 +4136,27 @@
 			)
 		)
 		(uuid "f8418f85-d0b6-4e5f-8dfd-0b2422c3411d")
+	)
+	(text_box "VPA to VFBSMPS (RAK3172LP, ST50HE) - LowPower\nVPA to 3V3 via Bead120 (RAK3172, STH50) - Std.Power\n"
+		(exclude_from_sim no)
+		(at 224.79 52.07 0)
+		(size 57.9639 6.616)
+		(margins 0.9525 0.9525 0.9525 0.9525)
+		(stroke
+			(width 0.0025)
+			(type solid)
+			(color 0 0 0 1)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "021f9047-cdcc-4018-bc60-dff1bbd732fb")
 	)
 	(junction
 		(at 184.15 129.54)
@@ -4287,7 +4318,7 @@
 	)
 	(wire
 		(pts
-			(xy 279.4 69.85) (xy 281.94 69.85)
+			(xy 279.4 86.36) (xy 281.94 86.36)
 		)
 		(stroke
 			(width 0)
@@ -4304,6 +4335,16 @@
 			(type default)
 		)
 		(uuid "07fd02d9-5c8c-4e5f-9d00-a3053e6bf759")
+	)
+	(wire
+		(pts
+			(xy 220.98 60.96) (xy 228.6 60.96)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "09e518ab-2cb1-4f2f-ad7b-a2fd909cff8f")
 	)
 	(wire
 		(pts
@@ -4387,6 +4428,16 @@
 	)
 	(wire
 		(pts
+			(xy 72.39 71.12) (xy 74.93 71.12)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "110ccc84-77d7-40ba-a96e-e3edfbe28159")
+	)
+	(wire
+		(pts
 			(xy 74.93 76.2) (xy 64.77 76.2)
 		)
 		(stroke
@@ -4407,7 +4458,17 @@
 	)
 	(wire
 		(pts
-			(xy 281.94 69.85) (xy 281.94 72.39)
+			(xy 74.93 76.2) (xy 74.93 71.12)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1211e058-241f-4d25-884d-b060d2559800")
+	)
+	(wire
+		(pts
+			(xy 281.94 86.36) (xy 281.94 88.9)
 		)
 		(stroke
 			(width 0)
@@ -4437,6 +4498,16 @@
 	)
 	(wire
 		(pts
+			(xy 198.12 53.34) (xy 198.12 63.5)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "15a05725-4f3e-45ed-906c-1e79fc5fae53")
+	)
+	(wire
+		(pts
 			(xy 175.26 85.09) (xy 175.26 76.2)
 		)
 		(stroke
@@ -4447,7 +4518,7 @@
 	)
 	(wire
 		(pts
-			(xy 279.4 67.31) (xy 279.4 69.85)
+			(xy 279.4 83.82) (xy 279.4 86.36)
 		)
 		(stroke
 			(width 0)
@@ -4497,16 +4568,6 @@
 	)
 	(wire
 		(pts
-			(xy 279.4 72.39) (xy 279.4 88.9)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "1b080359-0ef6-4098-b119-c9c067664541")
-	)
-	(wire
-		(pts
 			(xy 184.15 102.87) (xy 184.15 106.68)
 		)
 		(stroke
@@ -4517,7 +4578,7 @@
 	)
 	(wire
 		(pts
-			(xy 279.4 64.77) (xy 281.94 64.77)
+			(xy 279.4 81.28) (xy 281.94 81.28)
 		)
 		(stroke
 			(width 0)
@@ -4557,16 +4618,6 @@
 	)
 	(wire
 		(pts
-			(xy 209.55 66.04) (xy 231.14 66.04)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "263b5962-ea51-4561-a11c-bb36d17043df")
-	)
-	(wire
-		(pts
 			(xy 105.41 57.15) (xy 96.52 57.15)
 		)
 		(stroke
@@ -4577,17 +4628,7 @@
 	)
 	(wire
 		(pts
-			(xy 204.47 66.04) (xy 198.12 66.04)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "3b461719-c524-43f6-9ae2-801c411ccdf9")
-	)
-	(wire
-		(pts
-			(xy 281.94 62.23) (xy 279.4 62.23)
+			(xy 281.94 78.74) (xy 279.4 78.74)
 		)
 		(stroke
 			(width 0)
@@ -4867,7 +4908,7 @@
 	)
 	(wire
 		(pts
-			(xy 279.4 62.23) (xy 279.4 64.77)
+			(xy 279.4 78.74) (xy 279.4 81.28)
 		)
 		(stroke
 			(width 0)
@@ -4967,7 +5008,7 @@
 	)
 	(wire
 		(pts
-			(xy 279.4 88.9) (xy 275.59 88.9)
+			(xy 275.59 88.9) (xy 281.94 88.9)
 		)
 		(stroke
 			(width 0)
@@ -5047,7 +5088,7 @@
 	)
 	(wire
 		(pts
-			(xy 281.94 64.77) (xy 281.94 67.31)
+			(xy 281.94 81.28) (xy 281.94 83.82)
 		)
 		(stroke
 			(width 0)
@@ -5137,7 +5178,7 @@
 	)
 	(wire
 		(pts
-			(xy 281.94 67.31) (xy 279.4 67.31)
+			(xy 281.94 83.82) (xy 279.4 83.82)
 		)
 		(stroke
 			(width 0)
@@ -5287,16 +5328,6 @@
 	)
 	(wire
 		(pts
-			(xy 281.94 72.39) (xy 279.4 72.39)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ae53c6fe-63f7-4547-a955-2f67ac5fc310")
-	)
-	(wire
-		(pts
 			(xy 193.04 73.66) (xy 193.04 67.31)
 		)
 		(stroke
@@ -5304,16 +5335,6 @@
 			(type default)
 		)
 		(uuid "b026d135-eea9-41a3-bd6e-f7273bedc57c")
-	)
-	(wire
-		(pts
-			(xy 198.12 66.04) (xy 198.12 53.34)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "b2120b9c-4bd3-4a8a-aeca-f4680f0c8b89")
 	)
 	(wire
 		(pts
@@ -5377,13 +5398,23 @@
 	)
 	(wire
 		(pts
-			(xy 281.94 59.69) (xy 281.94 62.23)
+			(xy 281.94 76.2) (xy 281.94 78.74)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "b83965c3-6ff4-4229-94aa-fb63b37f8a67")
+	)
+	(wire
+		(pts
+			(xy 198.12 63.5) (xy 220.98 63.5)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b9f0de37-870b-4659-bf2d-26c1652bb5c5")
 	)
 	(wire
 		(pts
@@ -5727,6 +5758,16 @@
 	)
 	(wire
 		(pts
+			(xy 220.98 63.5) (xy 220.98 60.96)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f8aef8d3-62bb-42b6-8ae6-86747d14f755")
+	)
+	(wire
+		(pts
 			(xy 168.91 81.28) (xy 172.72 81.28)
 		)
 		(stroke
@@ -5873,6 +5914,50 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VPA"
+		(shape input)
+		(at 72.39 71.12 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "b64333ab-7958-4823-b45b-1d560c39ff80")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 65.9576 71.12 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VPA"
+		(shape input)
+		(at 228.6 60.96 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "c89e9715-ecf3-4084-b37a-f510fba61142")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 235.0324 60.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -8792,73 +8877,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:L_Ferrite_Small")
-		(at 207.01 66.04 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "672f3d97-f186-4937-aec0-fc29b7b6408f")
-		(property "Reference" "L3"
-			(at 202.692 64.516 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "Bead120"
-			(at 213.868 64.77 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Inductor_SMD:L_0402_1005Metric"
-			(at 207.01 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 207.01 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "FerriteBead Murata MPZ1005S121ETD25"
-			(at 207.01 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "8d262319-1738-4669-b9d9-090b96ab4a44")
-		)
-		(pin "1"
-			(uuid "3567bb35-ee7d-40d4-aa77-920f099c27fe")
-		)
-		(instances
-			(project "rak3172sip"
-				(path "/6c2f7cec-6210-4818-9bb7-f4bbe8aaf3fb"
-					(reference "L3")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Connector:Conn_01x03_Socket")
 		(at 99.06 86.36 180)
 		(unit 1)
@@ -9193,72 +9211,6 @@
 			(project "rak3172sip"
 				(path "/6c2f7cec-6210-4818-9bb7-f4bbe8aaf3fb"
 					(reference "R2")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:+3V3")
-		(at 231.14 66.04 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "742830fd-c5e0-4ad0-ae6d-68d0f80263c1")
-		(property "Reference" "#PWR018"
-			(at 231.14 69.85 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "+3V3"
-			(at 231.14 60.96 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 231.14 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 231.14 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"+3V3\""
-			(at 231.14 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "7207f0af-ff60-42ca-9a81-31ee6b7fbcf2")
-		)
-		(instances
-			(project "rak3172sip"
-				(path "/6c2f7cec-6210-4818-9bb7-f4bbe8aaf3fb"
-					(reference "#PWR018")
 					(unit 1)
 				)
 			)
@@ -10206,7 +10158,7 @@
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
-		(at 281.94 59.69 0)
+		(at 281.94 76.2 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -10214,7 +10166,7 @@
 		(dnp no)
 		(uuid "bdff7ece-89af-4403-b37d-deebbf3b5301")
 		(property "Reference" "ANT1"
-			(at 278.638 52.832 0)
+			(at 278.638 69.342 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10223,7 +10175,7 @@
 			)
 		)
 		(property "Value" "ANT"
-			(at 284.48 57.6579 0)
+			(at 284.48 74.1679 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10233,7 +10185,7 @@
 			)
 		)
 		(property "Footprint" "TestPoint:TestPoint_Pad_D1.0mm"
-			(at 287.02 59.69 0)
+			(at 287.02 76.2 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10242,7 +10194,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 287.02 59.69 0)
+			(at 287.02 76.2 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10251,7 +10203,7 @@
 			)
 		)
 		(property "Description" "test point"
-			(at 281.94 59.69 0)
+			(at 281.94 76.2 0)
 			(effects
 				(font
 					(size 1.27 1.27)

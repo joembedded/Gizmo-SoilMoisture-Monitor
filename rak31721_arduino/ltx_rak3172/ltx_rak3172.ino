@@ -1,3 +1,5 @@
+#include <lib.h>
+
 /**
  * @file ltx_rak3172_simple_node/ltx_rak3172.ino
  * @brief LoRaWAN Sensor Firmware for RAK3172 modules - A simple node
