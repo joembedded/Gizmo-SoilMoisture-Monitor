@@ -55,7 +55,7 @@
  * https://raw.githubusercontent.com/RAKWireless/RAKwireless-Arduino-BSP-Index/main/package_rakwireless_com_rui_index.json
  */
 
-#define APP_VERSION 17  // 10 == 1.0
+#define APP_VERSION 18  // 10 == 1.0
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -711,7 +711,9 @@ void send_cb(int32_t status) {
   if (status != RAK_LORAMAC_STATUS_OK)
     Serial.printf("ERROR: Send status: %d\n", status);
   mlora_info.stat.in_transfer = false;
+#ifdef USAGE_STANDALONE
   mlora_info.stat.flags &= 0xF0;  // Lower 4 Bits (reson) for Single Use
+#endif
 }
 // ---CB End
 
@@ -1207,14 +1209,20 @@ void ltx_lib_setup() {
   dbg_until_runtime = 600;  // 10 minutes debug after reset
 
   ltxtb_init();
-
-  Serial.begin(Serial.getBaudrate());
+  uint32_t baud = Serial.getBaudrate();
+#if defined(EXT_BAUDRATE)
+    // For external usage the 115kBd is sensitive to errors. For reliable Communication reduce
+    baud = EXT_BAUDRATE;
+#endif
+  Serial.begin(baud);
   Serial.printf("*** " DEV_FAMILY " (C)JoEmbedded.de ***\n");
   Serial.printf("LMAC:%08X%08X DEVICE_TYPE:%u V%u.%u\n", get_mac_h(), get_mac_l(), DEVICE_TYPE, DEVICE_FW_VERSION / 10, DEVICE_FW_VERSION % 10);
   Serial.printf("Version:%s('%s') LTX:V%u.%u\n\n", sw_version, SOC_NAME, APP_VERSION / 10, APP_VERSION % 10);
 
 #if defined(USAGE_STANDALONE)
   Serial.printf("Usage: STANDALONE\n");
+#else
+  Serial.printf("Usage: HOSTED\n");
 #endif
 #if defined(USAGE_EXT_AT)
   Serial.printf("Usage: EXTENDED_AT\n");

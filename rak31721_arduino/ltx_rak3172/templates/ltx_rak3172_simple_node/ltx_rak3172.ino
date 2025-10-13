@@ -1,3 +1,5 @@
+#include <lib.h>
+
 /**
  * @file ltx_rak3172_simple_node/ltx_rak3172.ino
  * @brief LoRaWAN Sensor Firmware for RAK3172 modules - A simple node
@@ -45,18 +47,20 @@ int16_t user_measure_values(int16_t ival) {
   modvcc = 3.30 / (float)analog_read_single(UDRV_ADC_CHANNEL_VREFINT) * (float)rcali3v3;
 
   // Optionally linearize, e.g. .floatval = (fval * param.koeff[x]) - param.koeff[x+1]
-  channel_value[0].fe.errno = 0;                                                       // Error code if needed
   channel_value[0].fe.floatval = analog_read_average(ANAPIN1, 100) * modvcc / 4096.0;  // Scale to V
   channel_value[0].unit = "V_PB4";                                                     // For display
-  channel_value[1].fe.errno = 0; // 0: NoError
+  channel_value[0].fe.errno = 0;                                                       // Error code if needed
 
   channel_value[1].fe.floatval = (float)user_count;
   channel_value[1].unit = "(Cnt/Err)";
-  channel_value[1].fe.errno = (user_count & 1) ? 0 : 7;  // if odd: Error 7 "NoData" on this channel, 
+  channel_value[1].fe.errno = (user_count & 32767) ? 0 : 7;  // if odd: alle 32k: Error 7 "NoData" on this channel, 
   user_count++;
 
-  anz_values = 2;  // global variable
+  channel_value[2].fe.floatval = (float)mlora_info.con.txframe_cnt; // Count sent framed´s
+  channel_value[2].unit = "TXCnt";                                  // For display
+  channel_value[2].fe.errno = 0; // 0: NoError
 
+  anz_values = 3;  // global variable
   return 0;  // OK - no transmission if <0
 }
 // HK is measured in the 2nd step if needed

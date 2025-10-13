@@ -26,7 +26,7 @@
 // Good combi: Both 1 or both 0: (1:Server periodically automatically adjusts DR with ADR set, else 0:use always maximum energy)
 // May be changed manually with AT-commands
 #define LORA_AUTO_DATARATE_REDUCTION 0      // 1:Init with ADR enabled (fix device), 0:Init with ADR disabled(movin device)
-#define LORA_CONFIRM_MODE 0                 // 1:Confirm TX, 0:Send unconfirmed
+#define LORA_CONFIRM_MODE 0                 // 1:Confirm TX, 0:Send unconfirmed (recommended, Automatic Confirms are added periodically)
 #define USER_CREDENTIAL_SEED (get_mac_l())  // Dynamic/Random or Static, Macro to initialize (indiviodual) credentials generation
 
 // LoRa Energy Scheme

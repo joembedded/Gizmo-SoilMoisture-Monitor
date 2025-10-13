@@ -24,14 +24,14 @@
 
 // Energy also dependant from Antenna Matching! Bad match: lower energy.
 #ifdef STD_ENERGY_RAK3172LSIP_3V3  // LowPower L-SIP
-#define SOC_NAME "RAK3172L-SIP LowPower"
+#define SOC_NAME "RAK3172LP-SIP LowPower"
 #define JOIN_ENERGY 100000       // uC For 3172-L at 3V3 @ DR0
 #define TX_PER_BYTE_ENERGY 1490  // uC/Byte For 3172-L at 3V3 @ DR0
 #define TX_FIX_ENERGY 53511      // uC For 3172-L at 3V3 @ DR0
 #endif
 
 #ifdef STD_ENERGY_RAK3172MODULE_3V3  // NormalPower Module, Eval:-T/-SIP
-#define SOC_NAME "RAK3172 StdPower"
+#define SOC_NAME "RAK3172-X StdPower"
 #define JOIN_ENERGY 160000       // uC For 3172-E/T at 3V3 @ DR0
 #define TX_PER_BYTE_ENERGY 3404  // uC/Byte For 3172-E/T at 3V3 @ DR0
 #define TX_FIX_ENERGY 116596     // uC For 3172-E/T at 3V3 @ DR0
