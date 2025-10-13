@@ -7,7 +7,7 @@
 //#define USAGE_STANDALONE // If defined: Single-Chip STANDALONE solution, else: HOSTED
 #define EXT_BAUDRATE  9600  // Default is 115200, if defined, use this Baudrate (< 115200 recommended if used as external devive)
 #define USAGE_EXT_AT     // optionally USE as AT modem with extended commands
-//#define LED_PIN PA4      // optionally Standard LED vs. VCC - This is PIN for State-LED (if defined)
+#define LED_PIN PA4      // optionally Standard LED vs. VCC - This is PIN for State-LED (if defined)
 
 //#define STD_ENERGY_RAK3172MODULE_3V3 // Standard and E/T/SIP
 #define STD_ENERGY_RAK3172LSIP_3V3 // Low Power-SIP only

@@ -4009,6 +4009,17 @@
 		)
 		(uuid b2f702c3-1e70-4a85-962a-e5d1b547324e)
 	)
+	(text "*todo*\n- RESET auf PIN führen (fuer Verw. als Modem)"
+		(exclude_from_sim no)
+		(at 35.306 168.402 0)
+		(effects
+			(font
+				(size 2.54 2.54)
+			)
+			(justify left)
+		)
+		(uuid "029d323a-d7b5-48bf-860e-12c99f7075e9")
+	)
 	(text "Variants:\nJ1: Assembled for external Antenna\n\nZ2: Assembled for internal Antenna\nZ1: dto\nZ3: dto\n\nZ1,Z3: depending on PCB material\n"
 		(exclude_from_sim no)
 		(at 244.602 117.602 0)
