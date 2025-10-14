@@ -28,7 +28,7 @@
 // May be changed manually with AT-commands
 #define LORA_AUTO_DATARATE_REDUCTION 0      // 1:Init with ADR enabled (fix device), 0:Init with ADR disabled(movin device)
 #define LORA_CONFIRM_MODE 0                 // 1:Confirm TX, 0:Send unconfirmed
-#define USER_CREDENTIAL_SEED (get_mac_l())  // Dynamic/Random or Static, Macro to initialize (indiviodual) credentials generation
+#define USER_CREDENTIAL_SEED (get_mac_l())  // Dynamic/Random or Static, Macro to initialize (individual) credentials generation
 
 // LoRa Energy Scheme
 

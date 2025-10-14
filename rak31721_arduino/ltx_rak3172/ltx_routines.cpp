@@ -310,15 +310,17 @@ void set_my_rbytes(uint8_t *pu, int16_t anz) {
     *pu++ = (my_rand16() & 255);  // Add Random Byte
   }
 }
-// String-Matcher Match "what" in *pstr
-bool str_cmatch(const char *what, const char *pstr) {
-  uint8_t c;
+// String-Matcher Match "what" in *pstr - Case insensitive
+bool str_cimatch(const char *what, const char *pstr) {
+  uint8_t c1, c2;
   for (;;) {
-    c = *what++;
-    if (!c)
-      return true;  // All equal until finish!
-    if (c != (*pstr++))
-      return false;  // Not equal
+    c1 = (uint8_t)*what++;
+    c2 = (uint8_t)*pstr++;
+    if (!c1) return true;  // Ende von 'what' erreicht → alles gleich bis hierher
+    // Großbuchstaben in Kleinbuchstaben umwandeln (nur ASCII)
+    if (c1 >= 'A' && c1 <= 'Z') c1 += 32;
+    if (c2 >= 'A' && c2 <= 'Z') c2 += 32;
+    if (c1 != c2) return false;  // Unterschied gefunden
   }
 }
 
@@ -600,13 +602,14 @@ static void menu_parse_payload(char *pc) {
 
 // Payload already formated and stored, reset received Flag
 static int16_t send_txpayload(void) {
+  mlora_info.stat.anz_received = 0;
   if (!mlora_info.txframe.txanz) {
     Serial.println("ERROR: Nothing to send");
+    mlora_info.stat.transfer_result = -2011;  // 1 Send Payload
     return -2011;
   }
   mlora_info.con.txframe_cnt++;
-  mlora_info.stat.in_transfer = true;
-  mlora_info.stat.sth_received = false;
+  mlora_info.stat.transfer_result = 1;  // 1 Send Payload
   bool sres;
   if (mlora_info.txframe.tx_with_conf) {  // request confirmation
     sres = api.lorawan.send(mlora_info.txframe.txanz, mlora_info.txframe.txbytes, mlora_info.txframe.txport, true);
@@ -614,8 +617,10 @@ static int16_t send_txpayload(void) {
     sres = api.lorawan.send(mlora_info.txframe.txanz, mlora_info.txframe.txbytes, mlora_info.txframe.txport);
   }
   if (!sres) {
-    Serial.println("ERROR: -2010, Send failed");  // Bool - e.g. because of Duty Cycle limitations or TCXO timeout
-    mlora_info.stat.in_transfer = false;
+    // e.g. because of Duty Cycle limitations or TCXO timeout
+    // or TimeRequest+Data collides with Server-Command..
+    Serial.println("ERROR: -2010, Send failed");  
+    mlora_info.stat.transfer_result = -2010;
     return -2010;  // Send failed
   }
   return 0;
@@ -651,7 +656,10 @@ void join_cb(int32_t status) {
 #if defined(LED_PIN)
       blink_timer_setvalrun(10, 8);  // 8 times short blink: ERROR
 #endif
-      mlora_info.stat.in_transfer = false;
+      if (status > 0) status = -status;
+      if (status < -32768) status = -32768;
+      // Kann auch 0 sein = OK - Nicht ueberschreiben wenn alte Fehlermeldung da
+      if (status < mlora_info.stat.transfer_result) mlora_info.stat.transfer_result = status;
     }
   }
 }
@@ -663,13 +671,18 @@ void recv_cb(SERVICE_LORA_RECEIVE_T *data) {
 #endif
   mlora_info.con.last_server_reply_runtime = now_runtime;
   uint8_t rlen = data->BufferSize;
+  if (rlen) {
+    if (data->Port == 0) {
+      Serial.printf("Received MAC-Port: Bytes:%u\n", rlen);
+    } else {
+      mlora_info.stat.anz_received = rlen;
+      Serial.printf("Received Port:%u: Bytes: %u\n", data->Port, rlen);
+    }
+  }
   if (dbg_until_runtime > now_runtime) {
-    Serial.printf("Received %u Bytes on Port %u\n", rlen, data->Port);
     Serial.printf("RxDR:%u RSSI:%d SNR:%d DL-Counter:%u\n", data->RxDatarate, data->Rssi, data->Snr, data->DownLinkCounter);
 
     if (rlen) {
-      mlora_info.stat.sth_received = true;
-
       Serial.printf("Data: ");
       for (int i = 0; i < rlen; i++) {
         Serial.printf("%02x", data->Buffer[i]);
@@ -687,6 +700,7 @@ void recv_cb(SERVICE_LORA_RECEIVE_T *data) {
   }
   // Evaluate payload:
   // LTX only Port 10! And is a string with space as separator ('p=600 cmd=Hello')
+  // Mit AT+RECV ist der Eingabepuffer nur EINMALIG lesbar!
   if (rlen && data->Port == 10) {
     data->Buffer[rlen] = 0;  // Terminate ASCII
 #if defined(USAGE_STANDALONE)
@@ -695,6 +709,7 @@ void recv_cb(SERVICE_LORA_RECEIVE_T *data) {
   }
 }
 
+/* Um Zeit zu erhalten: 'at+timereq=1', dann irgendwas senden (kommt nicht an), z.B. 'at+send 1:00' => Zeit kommt */
 void timereq_cb(int32_t status) {
   if (status == GET_DEVICE_TIME_OK) {
     mlora_info.con.last_server_time_runtime = now_runtime;
@@ -708,9 +723,14 @@ void timereq_cb(int32_t status) {
 
 /* Send-Callback: Usually just says 0, approx. 3 sec. after send ??? Good maybe for an LED or detect TCXO ok */
 void send_cb(int32_t status) {
-  if (status != RAK_LORAMAC_STATUS_OK)
+  if (status != RAK_LORAMAC_STATUS_OK) {  // =0
     Serial.printf("ERROR: Send status: %d\n", status);
-  mlora_info.stat.in_transfer = false;
+  }
+  if (status > 0) status = -status;
+  if (status < -32768) status = -32768;
+  // Kann auch 0 sein = OK - Nicht ueberschreiben wenn alte Fehlermeldung da
+  if (status < mlora_info.stat.transfer_result) mlora_info.stat.transfer_result = status;
+
 #ifdef USAGE_STANDALONE
   mlora_info.stat.flags &= 0xF0;  // Lower 4 Bits (reson) for Single Use
 #endif
@@ -746,9 +766,9 @@ int16_t lora_send_packet(void) {
   }
 
   if ((last_contact_sec > last_contact_limit) || !api.lorawan.njs.get()) {
-    Serial.printf("Join Network...\n");  // Join or Rejoin
-    rejoins = 3;                         // 1+3 attempts
-    mlora_info.stat.in_transfer = true;
+    Serial.printf("Join Network...\n");   // Join or Rejoin
+    rejoins = 3;                          // 1+3 attempts
+    mlora_info.stat.transfer_result = 2;  // 2: Join
     api.lorawan.join();
     uint32_t used_energy = JOIN_ENERGY;
     mlora_info.stat.frame_energy = used_energy;  // Set
@@ -908,9 +928,9 @@ static int16_t parse_ltx_cmd(char *pc) {
   if (!strcasecmp(pc, "initeu868")) {
     res = lora_setup(4);  // Band 4:868 MHz
     show_credentials();
-  } else if (str_cmatch("cred", pc)) {  // cred.. : Credentials and Setup
+  } else if (str_cimatch("cred", pc)) {  // cred.. : Credentials and Setup
     show_credentials();
-  } else if (str_cmatch("?", pc)) {  // ?: Pure info function or ?k coefficients
+  } else if (str_cimatch("?", pc)) {  // ?: Pure info function or ?k coefficients
     Serial.printf("DEVICE_TYPE: %u\n", DEVICE_TYPE);
     if (!mlora_info.con.device_init) {
       Serial.printf("*** Device not init! ***\n");
@@ -954,8 +974,8 @@ static int16_t parse_ltx_cmd(char *pc) {
     // Statistics (always)
   } else if (!strcasecmp(pc, "stat")) {
     int32_t last_contact_sec = now_runtime - mlora_info.con.last_server_reply_runtime;
-    //           '+F' B  B  B  u32 u32 B  last_contact_sec in Kombi with cfm.get(): to determin errors
-    Serial.printf("+F%u N%u R%u E%u L%u C%u S%u", mlora_info.stat.in_transfer, api.lorawan.njs.get(), mlora_info.stat.sth_received, mlora_info.stat.frame_energy,
+    //           '+F' i16  B  i16  u32 u32 B  last_contact_sec in Kombi with cfm.get(): to determin errors
+    Serial.printf("+F%d N%u R%d E%u L%u C%u S%u", mlora_info.stat.transfer_result, api.lorawan.njs.get(), mlora_info.stat.anz_received, mlora_info.stat.frame_energy,
                   last_contact_sec, api.lorawan.cfm.get(), mlora_info.con.txframe_cnt);  // Fuer Transfer
     if (mlora_info.con.last_server_time_runtime) {
       int32_t tage = now_runtime - mlora_info.con.last_server_time_runtime;
@@ -963,6 +983,12 @@ static int16_t parse_ltx_cmd(char *pc) {
       Serial.printf(" T%u", tage);  // Age of LoRa-Time (timereq possible only after joined!)
     }
     Serial.printf("\n");
+  } else if (!strcasecmp(pc, "dbg")) {
+    dbg_until_runtime = now_runtime + 1800;
+    Serial.printf("Dbg. 30 min\n");
+  } else if (!strcasecmp(pc, "ndbg")) {
+    dbg_until_runtime = 0,
+    Serial.printf("Dbg. off\n");
   }
 #if defined(USAGE_STANDALONE)
   else if (!strcasecmp(pc, "write")) {  // Write Parameter
@@ -975,12 +1001,12 @@ static int16_t parse_ltx_cmd(char *pc) {
     delay(50);
     api.system.restoreDefault();
     api.system.reboot();
-  } else if (str_cmatch("cmd=", pc)) {
+  } else if (str_cimatch("cmd=", pc)) {
     pc += 4;
     strncpy(param.messcmd, pc, MAX_MESSCMD);  // DSN
     param_dirty = true;
     Serial.printf("Cmd: '%s'\n", param.messcmd);
-  } else if (str_cmatch("p=", pc)) {
+  } else if (str_cimatch("p=", pc)) {
     uint32_t np = atoi(pc + 2);
     if (np < 10) {  // Ignore nonsensical periods
       res = -2007;  // Min. 10 sec period
@@ -1004,7 +1030,7 @@ static int16_t parse_ltx_cmd(char *pc) {
       else if (api.system.timer.start(RAK_TIMER_0, (int_sec * 1000), (void *)0) != true)
         res = -2006;  // Timer0 Fail2b
     }
-  } else if (str_cmatch("hkr=", pc)) {
+  } else if (str_cimatch("hkr=", pc)) {
     uint32_t nhk = atoi(pc + 4);
     if (nhk < 0)
       nhk = 0;  // Reload
@@ -1012,18 +1038,18 @@ static int16_t parse_ltx_cmd(char *pc) {
     mlora_info.stat.hk_dcnt = 0;
     param_dirty = true;
     Serial.printf("HK-Reload: %u\n", param.hk_reload);
-  } else if (str_cmatch("profile=", pc)) {
+  } else if (str_cimatch("profile=", pc)) {
     uint32_t nprof = atoi(pc + 8);
     if (nprof < 1)
       nprof = 1;  // Prof 1-xxx (1000: F16)
     param.sensor_profile = nprof;
     param_dirty = true;
     Serial.printf("Profile: %u\n", param.sensor_profile);
-  } else if (str_cmatch("wd=", pc)) {
+  } else if (str_cimatch("wd=", pc)) {
     param.use_watchdog = atoi(pc + 3) ? true : false;
     param_dirty = true;
     Serial.printf("Use Watchdog: %u\n", param.use_watchdog);
-  } else if (str_cmatch("k", pc)) {
+  } else if (str_cimatch("k", pc)) {
     if (*(pc + 1)) {
       uint16_t idx = strtoul(pc + 1, &pc, 10);
       if (idx < 0 || idx >= ANZ_KOEFF)
@@ -1043,7 +1069,7 @@ static int16_t parse_ltx_cmd(char *pc) {
         Serial.printf("koeff[%u]: %f %s\n", i, param.koeff[i], koeff_desc[i]);
       }
     }
-  } else if (str_cmatch("e", pc)) {            // e Measure
+  } else if (str_cimatch("e", pc)) {           // e Measure
     uint16_t ival = strtoul(pc + 1, &pc, 10);  // Measurement param
     Serial.printf("Measure(%u):\n", ival);
     if (!ival)
@@ -1081,7 +1107,7 @@ static int16_t parse_ltx_cmd(char *pc) {
     // Some info
     if (param_dirty)
       Serial.printf("INFO: Parameter not saved!\n");
-  } else if (str_cmatch("i", pc)) {            // Transmit - Manually always as 'e1'
+  } else if (str_cimatch("i", pc)) {           // Transmit - Manually always as 'e1'
     uint16_t ival = strtoul(pc + 1, &pc, 10);  // Measurement param
     Serial.printf("Manual Transfer(%u)...\n", ival);
     if (ival)
@@ -1096,7 +1122,7 @@ static int16_t parse_ltx_cmd(char *pc) {
   }
 #endif  // USAGE_STANDALONE
 #if defined(USAGE_EXT_AT)
-  else if (str_cmatch("send ", pc)) {  // send PORT
+  else if (str_cimatch("send ", pc)) {  // send PORT
     uint16_t port = strtoul(pc + 5, &pc, 10);
     if (port < 1 || port > 223)
       res = -2012;  // Illegal fPort
@@ -1116,7 +1142,7 @@ static int16_t parse_ltx_cmd(char *pc) {
         res = lora_send_packet();
       }
     }
-  } else if (str_cmatch("tput ", pc)) {  // Put TX packet in buffer '*': add, else start at 0
+  } else if (str_cimatch("tput ", pc)) {  // Put TX packet in buffer '*': add, else start at 0
     pc += 5;
     if (*pc != '*') mlora_info.txframe.txanz = 0;  // New Block 'xxxx..'
     else {
@@ -1148,7 +1174,7 @@ static int16_t parse_ltx_cmd(char *pc) {
     else Serial.printf("Txbuf:%u\n", mlora_info.txframe.txanz);  // Show No. Bytes in Buffer
   }
 #endif
-  else if (str_cmatch("echo", pc)) {  // Echo-Test (Communication) - Seems cmd size limited
+  else if (str_cimatch("echo", pc)) {  // Echo-Test (Communication) - Seems cmd size limited
     pc += 4;
     Serial.printf("Echo(%d)'%s'\n", strlen(pc), pc);
   } else if (!strcasecmp(pc, "reset")) {  // Reset Board
@@ -1179,7 +1205,6 @@ int ltx_cmd_handler(SERIAL_PORT _port, char *cmd, stParam *param) {
   if (param->argc != 1)
     res = -2009;  // Maybe ':' or no args
   else {
-    dbg_until_runtime = now_runtime + 1800;  // Debug for 30 min after commands
 #if defined(USAGE_STANDALONE)
     int32_t delta2next = next_periodic_runtime - now_runtime;
     if (delta2next < 60)
@@ -1211,8 +1236,8 @@ void ltx_lib_setup() {
   ltxtb_init();
   uint32_t baud = Serial.getBaudrate();
 #if defined(EXT_BAUDRATE)
-    // For external usage the 115kBd is sensitive to errors. For reliable Communication reduce
-    baud = EXT_BAUDRATE;
+  // For external usage the 115kBd is sensitive to errors. For reliable Communication reduce
+  baud = EXT_BAUDRATE;
 #endif
   Serial.begin(baud);
   Serial.printf("*** " DEV_FAMILY " (C)JoEmbedded.de ***\n");

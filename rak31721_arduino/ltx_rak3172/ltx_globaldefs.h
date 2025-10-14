@@ -127,8 +127,8 @@ typedef struct
   } txframe;
   struct
   {
-    bool in_transfer;       // TRUE during RADIO transfer
-    bool sth_received;      // TRUE if someting received, FALSE before send
+    int16_t transfer_result;   // 1:PaketTransfer, 2:Joining , 0:OK, <0: Errorcode
+    int16_t anz_received;      // Anzahl Bytes received wenn >0
     uint32_t frame_energy;  // Energy eines externen Frames
 #if defined(USAGE_STANDALONE)
     int16_t flags;  // 15 Bits Flags or if <0: Error / "Reason"
