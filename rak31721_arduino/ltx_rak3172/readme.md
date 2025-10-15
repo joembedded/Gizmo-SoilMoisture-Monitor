@@ -4,6 +4,14 @@ Dieses Repository enthält Arduino-Code für **RAK3172-Module** mit LoRa (Versio
 
 Je nach Konfiguration kann die LoRa-CPU entweder als **eigenständige Anwendung** oder als **peripheres Modem** für einen externen Host eingesetzt werden.
 
+
+> **Fazit zum Projekt "RAK3172"**: Für eigenständige Anwendungen via Arduino scheint der RAK3172 gut geeignet zu sein. Als externes Modem gibt es jedoch Probleme bei den "Piggyback"-MAC-Kommandos, z.B. `ATC+TIMEREQ=1` zusammen mit einem Datenpaket.  
+> Hardwareseitig sind die RAK3172LP-SIP und RAK3172-SIP von RAK absolut identisch zu den ST50H und ST50HE von ACSIP (nur anderer Chip-Aufdruck).  
+> 
+> Beim Stromverbrauch konnten folgende Werte gemessen werden: siehe [`RAK3172_ST50HE_PowerTest_Report.md`](RAK3172_ST50HE_PowerTest_Report.md).
+
+
+
 ## 🔧 Funktionsweise
 
 Der Arduino-Code basiert auf der **RUI3** und ergänzt diese mit eigenen Erweiterungen (`ATC+LTX...`). Alle 'normalen' RUI3-Befehle können weiterhin verwendet werden.
@@ -164,6 +172,6 @@ HEX:    303132333435363738396162636465666768696A30313233343536373839616263646566
 
 ## 📝 Lizenz & Copyright
 
-© JoEmbedded.de
+© JoEmbedded.de  - joembedded@gmail.com
 
 ---
