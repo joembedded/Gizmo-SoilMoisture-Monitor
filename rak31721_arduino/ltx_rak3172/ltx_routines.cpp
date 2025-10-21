@@ -125,9 +125,9 @@ bool wdt_in_use;  // True if used/enabled
 #define ENERGY_PERIODIC_WDT 190    // Avg. 10 mA for 10 msec + 3uA * 30 sec
 #define ENERGY_PERIODIC_NOWDT 420  // Avg. 8 mA for 8 msec +3uA * 120 sec
 
-#define IWDG_WINDOW 0xFFF  // Feeding too fast triggers WDT-Window!
-#define IWDG_RELOAD 0xFFF
-static IWDG_HandleTypeDef hiwdg;
+#define IWDG_WINDOW 0xFFF  // Feeding too fast triggers WDT-Window (FFF:Off)!
+#define IWDG_RELOAD 0xFFF // 4095
+static IWDG_HandleTypeDef hiwdg;  // Wroking during SLEEP
 void jo_wdt_feed(void) {
   HAL_IWDG_Refresh(&hiwdg);
 }
